@@ -27,33 +27,45 @@ class Config:
             The settings.
         """
 
+        prefix = Config._environment_variable_prefix()
+
         # initialise the setting variables
 
         # secret key
-        secret_key = Config._environment_variable('SECRET_KEY', config_name)
+        secret_key = Config._environment_variable('SECRET_KEY', prefix=prefix, config_name=config_name)
 
         # database
-        database_uri = Config._environment_variable('DATABASE_URI', config_name)
+        database_uri = Config._environment_variable('DATABASE_URI', prefix=prefix, config_name=config_name)
 
         # location of log file
-        logging_file_base_path = Config._environment_variable('LOGGING_FILE_BASE_PATH', config_name)
+        logging_file_base_path = Config._environment_variable('LOGGING_FILE_BASE_PATH',
+                                                              prefix=prefix,
+                                                              config_name=config_name)
 
         # logging level for logging to a file
         logging_file_logging_level = Config._logging_level(Config._environment_variable('LOGGING_FILE_LOGGING_LEVEL',
-                                                                                    config_name,
-                                                                                    required=False,
-                                                                                    default='ERROR'))
+                                                                                        prefix=prefix,
+                                                                                        config_name=config_name,
+                                                                                        required=False,
+                                                                                        default='ERROR'))
 
         # maximum size of a log file
-        logging_file_max_bytes = Config._environment_variable('LOGGING_FILE_MAX_BYTES', config_name, required=False,
+        logging_file_max_bytes = Config._environment_variable('LOGGING_FILE_MAX_BYTES',
+                                                              prefix=prefix,
+                                                              config_name=config_name,
+                                                              required=False,
                                                               default=5 * 1024 * 1024)
 
         # number of backed up log files kept
-        logging_file_backup_count = Config._environment_variable('LOGGING_FILE_BACKUP_COUNT', config_name,
+        logging_file_backup_count = Config._environment_variable('LOGGING_FILE_BACKUP_COUNT',
+                                                                 prefix=prefix,
+                                                                 config_name=config_name,
                                                                  required=False, default=10)
 
         # email addresses to send log messages to
-        logging_mail_to_addresses = Config._environment_variable('LOGGING_MAIL_TO_ADDRESSES', config_name,
+        logging_mail_to_addresses = Config._environment_variable('LOGGING_MAIL_TO_ADDRESSES',
+                                                                 prefix=prefix,
+                                                                 config_name=config_name,
                                                                  required=False)
         if logging_mail_to_addresses:
             to_addresses = logging_mail_to_addresses.split(r'\s*,\s*')
@@ -61,24 +73,33 @@ class Config:
             to_addresses = []
 
         # host for sending log emails
-        logging_mail_host = Config._environment_variable('LOGGING_MAIL_HOST', config_name, required=False)
+        logging_mail_host = Config._environment_variable('LOGGING_MAIL_HOST',
+                                                         prefix=prefix,
+                                                         config_name=config_name,
+                                                         required=False)
 
         # logging level for logging to an email
         logging_mail_logging_level = Config._logging_level(Config._environment_variable('LOGGING_MAIL_LOGGING_LEVEL',
-                                                                                    config_name,
-                                                                                    required=False,
-                                                                                    default='ERROR'))
+                                                                                        prefix=prefix,
+                                                                                        config_name=config_name,
+                                                                                        required=False,
+                                                                                        default='ERROR'))
 
         # email address to use in the from field of a log email
-        logging_mail_from_address = Config._environment_variable('LOGGING_MAIL_FROM_ADDRESS', config_name,
+        logging_mail_from_address = Config._environment_variable('LOGGING_MAIL_FROM_ADDRESS',
+                                                                 prefix=prefix,
+                                                                 config_name=config_name,
                                                                  required=False)
 
         # subject for log emails
-        logging_mail_subject = Config._environment_variable('LOGGING_MAIL_SUBJECT', config_name, required=False)
+        logging_mail_subject = Config._environment_variable('LOGGING_MAIL_SUBJECT',
+                                                            prefix=prefix,
+                                                            config_name=config_name,
+                                                            required=False)
 
         # disable SSL?
         try:
-            ssl_status = SSLStatus.ENABLED if int(os.environ.get('SSL_ENABLED')) != 0 else SSLStatus.DISABLED
+            ssl_status = SSLStatus.ENABLED if int(os.environ.get(prefix + 'SSL_ENABLED')) != 0 else SSLStatus.DISABLED
         except:
             ssl_status = SSLStatus.ENABLED
 
@@ -98,13 +119,16 @@ class Config:
         )
 
     @staticmethod
-    def _environment_variable(raw_name, config_name, required=True, default=None):
+    def _environment_variable(raw_name, prefix, config_name, required=True, default=None):
         """Get the value of an environment variable.
 
         Params
         ------
         raw_name: str
-            The "raw" name of the environment variable, from which the name for the given config_name can be constructed.
+            The "raw" name of the environment variable, from which the name for the given config_name can be
+            constructed.
+        prefix: str
+            Prefix for all environment variables,, as given in root level file env_var_prefix.
         config_name: str
             Configuration name, as passed to the `manage.py` script.
         required: bool
@@ -119,20 +143,40 @@ class Config:
             Value of the environment variable names.
         """
 
-        prefix = dict(
+        infix = dict(
             development='DEV_',
             testing='TEST_',
             production='',
         )
-        if config_name not in prefix:
+        if config_name not in infix:
             raise ValueError('Unknown configuration name: {0}'.format(config_name))
-        name = prefix[config_name] + raw_name
+        name = prefix + infix[config_name] + raw_name
 
         variable_value = os.environ.get(key=name, default=default)
         if required and variable_value is None:
             raise ValueError('Environment variable not set: {0}'.format(name))
 
         return variable_value
+
+    @staticmethod
+    def _environment_variable_prefix():
+        """Get the prefix to use for the environment variables.
+
+        Returns:
+        --------
+        str
+            The prefix.
+        """
+
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'env_var_prefix'), 'r') as f:
+                return f.read().strip().rstrip('_') + '_'
+        except:
+            message = "The environment variable prefix couldn't be read in. " \
+                      "This probably means that there is no root level file 'env_var_prefix'. This file must contain " \
+                      "a single line with the prefix. Leading and trailing whitespace as well as leading underscores " \
+                      "will be ignored."
+            raise IOError(message)
 
     @staticmethod
     def _logging_level(name):
@@ -207,6 +251,7 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     DEBUG = True
+    TESTING = True
 
 
 class ProductionConfig(Config):

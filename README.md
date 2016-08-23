@@ -43,15 +43,21 @@ TBD
 
 ## Environment variables
 
-The configuration file makes use of various environment variables. Most of these must be defined for various configurations, which are distinguished by different prefixes for the variable name:
+The configuration file makes use of various environment variables. All of these must have a common prefix which is defined in the root level file `env_var_prefix`. This file must have a single line with a text string, which is taken as the prefix. Leading and trailing white space as well as trailing underscores are ignored. An underscore is affixed to the prefix.
 
-| Configuration name | Prefix |
+Most of the environment variables must be defined for various configurations, which are distinguished by different infixes for the variable name:
+
+| Configuration name | Infix |
 | -- | -- |
 | development | `DEV_` |
 | testing | `TEST_` |
 | production | no prefix |
 
-Here tests refer to (automated) tests on your machine, and the deployment server could be the production server, or a server for testing. The following variables are required for all modes:
+Here tests refer to (automated) tests on your machine, and the deployment server could be the production server, or a server for testing.
+
+For example, if the content of the file `env_var_prefix` is `MY_APP` an environment variable name for the development configuration could be `MY_APP_DEV_DATABASE_URI`.
+
+The following variables are required for all modes:
 
 | Environment variable | Description | Required | Default | Example |
 | -- | -- | -- | -- | -- | -- |
