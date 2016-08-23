@@ -1,15 +1,201 @@
+import enum
 import logging
+import os
+
 from logging.handlers import RotatingFileHandler
+from logging.handlers import SMTPHandler
+
+
+class SSLStatus(enum.Enum):
+    ENABLED = True
+    DISABLED = False
 
 
 class Config:
     @staticmethod
-    def init_app(app):
-        file_handler = RotatingFileHandler(filename='/Users/christian/Desktop/LOGS/test.log', # os.environ.get('LOGFILE'),
-                                           maxBytes=500,
-                                           backupCount=10)
-        file_handler.setLevel(logging.ERROR)
+    def _settings(config_name):
+        """Return the settings.
+
+        Params:
+        -------
+        config_name: str
+            Configuration name, as passed to the manage.py script.
+
+        Returns:
+        --------
+        dict:
+            The settings.
+        """
+
+        # initialise the setting variables
+
+        # secret key
+        secret_key = Config._environment_variable('SECRET_KEY', config_name)
+
+        # database
+        database_uri = Config._environment_variable('DATABASE_URI', config_name)
+
+        # location of log file
+        logging_file_base_path = Config._environment_variable('LOGGING_FILE_BASE_PATH', config_name)
+
+        # logging level for logging to a file
+        logging_file_logging_level = Config._logging_level(Config._environment_variable('LOGGING_FILE_LOGGING_LEVEL',
+                                                                                    config_name,
+                                                                                    required=False,
+                                                                                    default='ERROR'))
+
+        # maximum size of a log file
+        logging_file_max_bytes = Config._environment_variable('LOGGING_FILE_MAX_BYTES', config_name, required=False,
+                                                              default=5 * 1024 * 1024)
+
+        # number of backed up log files kept
+        logging_file_backup_count = Config._environment_variable('LOGGING_FILE_BACKUP_COUNT', config_name,
+                                                                 required=False, default=10)
+
+        # email addresses to send log messages to
+        logging_mail_to_addresses = Config._environment_variable('LOGGING_MAIL_TO_ADDRESSES', config_name,
+                                                                 required=False)
+        if logging_mail_to_addresses:
+            to_addresses = logging_mail_to_addresses.split(r'\s*,\s*')
+        else:
+            to_addresses = []
+
+        # host for sending log emails
+        logging_mail_host = Config._environment_variable('LOGGING_MAIL_HOST', config_name, required=False)
+
+        # logging level for logging to an email
+        logging_mail_logging_level = Config._logging_level(Config._environment_variable('LOGGING_MAIL_LOGGING_LEVEL',
+                                                                                    config_name,
+                                                                                    required=False,
+                                                                                    default='ERROR'))
+
+        # email address to use in the from field of a log email
+        logging_mail_from_address = Config._environment_variable('LOGGING_MAIL_FROM_ADDRESS', config_name,
+                                                                 required=False)
+
+        # subject for log emails
+        logging_mail_subject = Config._environment_variable('LOGGING_MAIL_SUBJECT', config_name, required=False)
+
+        # disable SSL?
+        try:
+            ssl_status = SSLStatus.ENABLED if int(os.environ.get('SSL_ENABLED')) != 0 else SSLStatus.DISABLED
+        except:
+            ssl_status = SSLStatus.ENABLED
+
+        return dict(
+            database_uri=database_uri,
+            logging_file_base_path=logging_file_base_path,
+            logging_file_logging_level=logging_file_logging_level,
+            logging_file_max_bytes=logging_file_max_bytes,
+            logging_file_backup_count=logging_file_backup_count,
+            logging_mail_from_address=logging_mail_from_address,
+            logging_mail_host=logging_mail_host,
+            logging_mail_logging_level=logging_mail_logging_level,
+            logging_mail_subject=logging_mail_subject,
+            logging_mail_to_addresses=to_addresses,
+            secret_key=secret_key,
+            ssl_status=ssl_status
+        )
+
+    @staticmethod
+    def _environment_variable(raw_name, config_name, required=True, default=None):
+        """Get the value of an environment variable.
+
+        Params
+        ------
+        raw_name: str
+            The "raw" name of the environment variable, from which the name for the given config_name can be constructed.
+        config_name: str
+            Configuration name, as passed to the `manage.py` script.
+        required: bool
+            Whether the environment variable is required. A ValueErrort is raised if the variable is required and not
+            set and None is passed as default value.
+        default: str
+            Value to return if the environment variable is not set.
+
+        Returns
+        -------
+        str:
+            Value of the environment variable names.
+        """
+
+        prefix = dict(
+            development='DEV_',
+            testing='TEST_',
+            production='',
+        )
+        if config_name not in prefix:
+            raise ValueError('Unknown configuration name: {0}'.format(config_name))
+        name = prefix[config_name] + raw_name
+
+        variable_value = os.environ.get(key=name, default=default)
+        if required and variable_value is None:
+            raise ValueError('Environment variable not set: {0}'.format(name))
+
+        return variable_value
+
+    @staticmethod
+    def _logging_level(name):
+        """Return the logging level for a given name.
+
+        Params:
+        -------
+        name: str
+            Case-insensitive name of the logging level (such as 'ERROR' or 'WARNING').
+
+        Returns:
+        --------
+        int
+            The logging level.
+        """
+
+        # logging levels
+        logging_levels = dict(
+            CRITICAL=logging.CRITICAL,
+            ERROR=logging.ERROR,
+            WARNING=logging.WARNING,
+            INFO=logging.INFO,
+            DEBUG=logging.DEBUG,
+            NOTSET=logging.NOTSET
+        )
+
+        name = name.upper()
+        if name not in logging_levels:
+            raise ValueError("Unknown logging level: {0}".format(name))
+        return logging_levels[name]
+
+    @staticmethod
+    def init_app(app, config_name):
+        """Initialises the Flask app.
+
+        Params:
+        -------
+        app: Flask
+            The Flask app.
+        config_name: str
+            The configuration name, as passed to the `manage.py` script.
+
+        """
+        settings = Config._settings(config_name)
+
+        # logging to file
+        file_handler = RotatingFileHandler(filename=settings['logging_file_base_path'],
+                                           maxBytes=settings['logging_file_max_bytes'],
+                                           backupCount=settings['logging_file_backup_count'])
+        file_handler.setLevel(settings['logging_file_logging_level'])
         app.logger.addHandler(file_handler)
+
+        # logging to email
+        if settings['logging_mail_host'] and settings['logging_mail_to_addresses']:
+            smtp_handler = SMTPHandler(mailhost=settings['logging_mail_host'],
+                                       fromaddr=settings['logging_mail_from_address'],
+                                       toaddrs=settings['logging_mail_to_addresses'],
+                                       subject=settings['logging_mail_subject'])
+            smtp_handler.setLevel(settings['logging_mail_logging_level'])
+            app.logger.addHandler(smtp_handler)
+
+        # use SSL?
+        app.config['SSL_STATUS'] = settings['ssl_status']
 
 
 class DevelopmentConfig(Config):
@@ -24,11 +210,8 @@ class ProductionConfig(Config):
     DEBUG = False
 
 
-
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'production': ProductionConfig,
-
-    'default': DevelopmentConfig
 }
