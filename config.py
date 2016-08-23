@@ -178,6 +178,9 @@ class Config:
         """
         settings = Config._settings(config_name)
 
+        # secret key
+        app.config['SECRET_KEY'] = settings['secret_key']
+
         # logging to file
         file_handler = RotatingFileHandler(filename=settings['logging_file_base_path'],
                                            maxBytes=settings['logging_file_max_bytes'],
