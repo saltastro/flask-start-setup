@@ -184,6 +184,18 @@ Flask-Bootstrap==w.x.y.z
 
 from the file `requirements.txt` in the root folder. (`w.x.y.z` denotes a version number.)
 
+## Testing
+
+You should add all your unit tests to the folder `tests/unittests`. BDD feature files should be put in the folder `tests/features`, and the corresponding step implementation files in `tests/features/steps`. Examples are included both for unit tests and for BDD tests.
+
+The Bash script `run_tests.sh` allows you to run your tests. In addition it uses the `pycodestyle` module to check compliance with PEP8. Regarding the latter a maximum line length of 120 is assumed and module level imports aren't forced to be at the top of a file.
+
+If you want to enforce that git commits can only be pushed if all tests are passed, you may use a git hook. If there is a pre-push hook already, modify it to include the content of the `run_tests.sh` script. Otherwise just copy the script ands ensure the hook is executable:
+
+```bash
+cp run_tests.sh .git/hooks/pre-push
+chmod u+x .git/hooks/pre-push
+```
 
 
 
