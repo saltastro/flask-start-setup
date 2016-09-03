@@ -242,7 +242,7 @@ class Config:
             app.logger.addHandler(smtp_handler)
 
         # use SSL?
-        app.config['SSL_STATUS'] = settings['ssl_status']
+        app.config['SSL_STATUS'] = False  # settings['ssl_status']
 
 
 class DevelopmentConfig(Config):
