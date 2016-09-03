@@ -27,7 +27,7 @@ class Config:
             The settings.
         """
 
-        prefix = Config._environment_variable_prefix()
+        prefix = Config.environment_variable_prefix()
 
         # initialise the setting variables
 
@@ -159,7 +159,7 @@ class Config:
         return variable_value
 
     @staticmethod
-    def _environment_variable_prefix():
+    def environment_variable_prefix():
         """Get the prefix to use for the environment variables.
 
         Returns:
