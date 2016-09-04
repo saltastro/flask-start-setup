@@ -114,32 +114,6 @@ def setup():
     You should only have to call this task once, but re-running it should cause no problems.
     """
 
-    # nginx should be installed from the nginx site
-    # hence we have to add this site to the list of apt sources
-    print('Please enter the release name of the remote server\'s Ubuntu version '
-          '(such "trusty" for 14.04 or "xenial" for 16.04')
-    ubuntu_release = input('> ')
-    deb = 'deb http://nginx.org/packages/ubuntu/ {release} nginx'.format(release=ubuntu_release)
-    deb_src = 'deb-src http://nginx.org/packages/ubuntu/ {release} nginx'.format(release=ubuntu_release)
-    apt_src_list = '/etc/apt/sources.list'
-    sudo('grep -Fxq "{deb}" {apt_src_list}\n'
-         'if [[ $? != 0 ]]\n'
-         'then\n'
-         '    echo >> {apt_src_list}\n'
-         '    echo "# nginx" >> {apt_src_list}\n'
-         '    echo "{deb}" >> {apt_src_list}\n'
-         'fi'.format(deb=deb, apt_src_list=apt_src_list))
-    sudo('grep -Fxq "{deb_src}" {apt_src_list}\n'
-         'if [[ $? != 0 ]]\n'
-         'then\n'
-         '    echo "{deb_src}" >> {apt_src_list}\n'
-         'fi'.format(deb_src=deb_src, apt_src_list=apt_src_list))
-
-    # make sure the nginx packages can be validated
-    run('wget http://nginx.org/keys/nginx_signing.key')
-    sudo('apt-key add nginx_signing.key')
-    run('rm nginx_signing.key')
-
     # upgrade/update apt
     upgrade_libs()
 
@@ -155,6 +129,9 @@ def setup():
 
     # supervisor
     sudo('apt-get install -y supervisor')
+
+    # nginx
+    sudo('apt-get install -y nginx')
 
     # clone the repository (if it doesn't exist yet)
     run('if [[ ! -d {site_dir} ]]\n'
