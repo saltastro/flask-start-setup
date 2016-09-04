@@ -13,7 +13,7 @@ class SSLStatus(enum.Enum):
 
 class Config:
     @staticmethod
-    def _settings(config_name):
+    def settings(config_name):
         """Return the settings.
 
         Params:
@@ -220,7 +220,7 @@ class Config:
             The configuration name, as passed to the `manage.py` script.
 
         """
-        settings = Config._settings(config_name)
+        settings = Config.settings(config_name)
 
         # secret key
         app.config['SECRET_KEY'] = settings['secret_key']
