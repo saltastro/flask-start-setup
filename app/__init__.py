@@ -1,6 +1,6 @@
 from flask import Flask
-from flask.ext.login import LoginManager
 from flask_bootstrap import Bootstrap
+from flask_login import LoginManager
 from flask_sslify import SSLify
 
 from config import config, SSLStatus
