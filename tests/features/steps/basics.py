@@ -15,4 +15,4 @@ def step_impl(context):
 
 @then("b is 42")
 def step_impl(context):
-    assert context.b == 43
+    assert context.b == 42
