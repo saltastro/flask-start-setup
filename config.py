@@ -27,6 +27,10 @@ class Config:
             The settings.
         """
 
+        # set environment variables from file
+        env_var_file = os.path.join(os.path.dirname(__file__), '.env')
+        Config._set_environment_variables_from_file(env_var_file)
+
         prefix = Config.environment_variable_prefix()
 
         # initialise the setting variables
@@ -117,6 +121,31 @@ class Config:
             secret_key=secret_key,
             ssl_status=ssl_status
         )
+
+    @staticmethod
+    def _set_environment_variables_from_file(env_var_file):
+        """Set environment variables from a file.
+
+        If the given path exists, the corresponding file is read in. Each of its lines is parsed as KEY=VALUE, and the
+        value VALUE is assigned to the environment variable KEY. Lines that cannot be parsed are ignored.
+
+        Params:
+        -------
+        env_var_file: str
+            Path of the file containing environment variable definitions. The file need not exist.
+        """
+
+        if not os.path.exists(env_var_file):
+            return
+
+        with open(env_var_file) as f:
+            for line in f:
+                parts = line.split('=')
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    value = parts[1].strip()
+                    os.environ[key] = value
+
 
     @staticmethod
     def _environment_variable(raw_name, prefix, config_name, required=True, default=None):
