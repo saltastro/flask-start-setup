@@ -47,24 +47,25 @@ class Config:
                                                               config_name=config_name)
 
         # logging level for logging to a file
-        logging_file_logging_level = Config._logging_level(Config._environment_variable('LOGGING_FILE_LOGGING_LEVEL',
-                                                                                        prefix=prefix,
-                                                                                        config_name=config_name,
-                                                                                        required=False,
-                                                                                        default='ERROR'))
+        logging_file_logging_level_name = Config._environment_variable('LOGGING_FILE_LOGGING_LEVEL',
+                                                                       prefix=prefix,
+                                                                       config_name=config_name,
+                                                                       required=False,
+                                                                       default='ERROR')
+        logging_file_logging_level = Config._logging_level(logging_file_logging_level_name)
 
         # maximum size of a log file
-        logging_file_max_bytes = Config._environment_variable('LOGGING_FILE_MAX_BYTES',
-                                                              prefix=prefix,
-                                                              config_name=config_name,
-                                                              required=False,
-                                                              default=5 * 1024 * 1024)
+        logging_file_max_bytes = int(Config._environment_variable('LOGGING_FILE_MAX_BYTES',
+                                                                  prefix=prefix,
+                                                                  config_name=config_name,
+                                                                  required=False,
+                                                                  default=5 * 1024 * 1024))
 
         # number of backed up log files kept
-        logging_file_backup_count = Config._environment_variable('LOGGING_FILE_BACKUP_COUNT',
-                                                                 prefix=prefix,
-                                                                 config_name=config_name,
-                                                                 required=False, default=10)
+        logging_file_backup_count = int(Config._environment_variable('LOGGING_FILE_BACKUP_COUNT',
+                                                                     prefix=prefix,
+                                                                     config_name=config_name,
+                                                                     required=False, default=10))
 
         # email addresses to send log messages to
         logging_mail_to_addresses = Config._environment_variable('LOGGING_MAIL_TO_ADDRESSES',
@@ -83,11 +84,12 @@ class Config:
                                                          required=False)
 
         # logging level for logging to an email
-        logging_mail_logging_level = Config._logging_level(Config._environment_variable('LOGGING_MAIL_LOGGING_LEVEL',
-                                                                                        prefix=prefix,
-                                                                                        config_name=config_name,
-                                                                                        required=False,
-                                                                                        default='ERROR'))
+        logging_mail_logging_level_name = Config._environment_variable('LOGGING_MAIL_LOGGING_LEVEL',
+                                                                       prefix=prefix,
+                                                                       config_name=config_name,
+                                                                       required=False,
+                                                                       default='ERROR')
+        logging_mail_logging_level = Config._logging_level(logging_mail_logging_level_name)
 
         # email address to use in the from field of a log email
         logging_mail_from_address = Config._environment_variable('LOGGING_MAIL_FROM_ADDRESS',
@@ -111,11 +113,13 @@ class Config:
             database_uri=database_uri,
             logging_file_base_path=logging_file_base_path,
             logging_file_logging_level=logging_file_logging_level,
+            logging_file_logging_level_name=logging_file_logging_level_name,
             logging_file_max_bytes=logging_file_max_bytes,
             logging_file_backup_count=logging_file_backup_count,
             logging_mail_from_address=logging_mail_from_address,
             logging_mail_host=logging_mail_host,
             logging_mail_logging_level=logging_mail_logging_level,
+            logging_mail_logging_level_name=logging_mail_logging_level_name,
             logging_mail_subject=logging_mail_subject,
             logging_mail_to_addresses=to_addresses,
             secret_key=secret_key,
