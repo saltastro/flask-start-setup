@@ -7,5 +7,5 @@ from app import create_app
 app = WSGIContainer(create_app('production'))
 
 http_server = HTTPServer(app)
-http_server.listen(8080)
+http_server.listen(80)
 IOLoop.instance().start()
