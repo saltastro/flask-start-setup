@@ -39,7 +39,54 @@ You can then run the following commands for launching the (development) server o
 
 ### On a remote server
 
-TBD
+Ubuntu 14.04 must be running on the remote server, and there needs to be a `root` user.
+
+Create a user `deploy` for deploying the site, and give that user sudo permissions:
+
+```bash
+adduser deploy
+gpasswd -a deploy sudo
+```
+
+You may choose another username for this user, but then you have to set the `<PREFIX>_SERVER_USERNAME` environment variable accordingly. See the section on environment variables for an explanation of the prefix.
+
+Make sure wget is installed on the server.
+
+Unless your repository has public access, you should also generate an SSL key for the deploy user. Check whether there is a file `~/.ssh/id_rsa.pub` already. If there isn't, create a new public key by running
+
+```bash
+ssh-keygen
+```
+
+If you don't choose the default file location, you'll have to modify the following instructions accordingly.
+
+Once you have the key generated, find out whether the ssh agent is running.
+
+```bash
+ps -e | grep [s]sh-agent
+```
+
+If agent isn't running, start it with
+
+```bash
+ssh-agent /bin/bash
+```
+
+Load your new key into the ssh agent:
+
+```bash
+ssh-add ~/.ssh/id_rsa
+```
+
+You can now view your public key by means of
+
+```bash
+cat ~/.ssh/id_rsa.pub
+```
+
+Refer to to the instructions for your repository host like Github or Bitbucket as to how add your key top the host.
+
+Supervisor, which is used for running the Tornado server, logs both the standard output and the standard error to log files in the folder `/var/log/supervisor`. You should check these log files if the server doesn't start.
 
 ## Environment variables
 
@@ -73,12 +120,17 @@ The following variables are required for all modes:
 | `SECRET_KEY` | Key for password seeding | Yes | n/a | `s89ywnke56` |
 | `SSL_ENABLED` | Whether SSL should be disabled | No | 0 | 0 |
 
-The following variable needs to be defined for production only.
+The following variable have no infix (but the prefix!) and are required only if you run the commands for setting up a remote server or deploying the site.
 
-| Environment variable | Description | Example |
+| Environment variable | Description | Required | Default | Example |
 | -- | -- |
-| SERVER_ADDRESS | Address of the deployment server | `www.my-app.org.za` |
-| SERVER_USERNAME | Username for the deployment server | `deployment_user` |
+| DEPLOY_GIT_REPOSITORY | Git repository used for deploying the site | Yes | n/a | `git@bitbucket.org:your/repository.git` |
+| DEPLOY_HOST | Address of the deployment server | Yes | n/a | `my-app.org.za` |
+| DEPLOY_DOMAIN_NAME | Domain name for the website | No | Value of `DEPLOY_HOST` | `my-app.org.za` |
+| DEPLOY_USERNAME | Username for the deployment server | No | `deploy` | `deploy` |
+| DEPLOY_APP_DIR_NAME | Directory name for the deployed code | Yes | n/a | `my_app` |
+| DEPLOY_WEB_USER | User for running the Tornado server | No | `www-data` | `www-data` |
+| DEPLOY_WEB_USER_GROUP | Unix group of the user running the Tornado server | No | `www-data` | `www-data` |
 
 ## Adding your own environment variables
 
