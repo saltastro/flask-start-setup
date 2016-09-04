@@ -171,6 +171,12 @@ def setup():
 
 
 def deploy():
+    # test everything
+    local('./run_tests.sh')
+
+    # push Git content to the remote repository
+    local('git push')
+
     # update the Git repository
     run('cd {site_dir}; git pull'.format(site_dir=site_dir))
 
