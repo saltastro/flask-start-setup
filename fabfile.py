@@ -41,7 +41,8 @@ def update_nginx_conf():
          '> /etc/nginx/sites-available/{domain_name}'.format(domain_name=domain_name,
                                                              site_dir=site_dir,
                                                              static_dir=static_dir))
-    sudo('ln -sf /etc/nginx/sites-available/{domain_name} /etc/nginx/sites-enabled/{domain_name}')
+    sudo('ln -sf /etc/nginx/sites-available/{domain_name} /etc/nginx/sites-enabled/{domain_name}'.format(
+        domain_name=domain_name))
     sudo('service nginx restart')
 
 def update_environment_variables_file():
