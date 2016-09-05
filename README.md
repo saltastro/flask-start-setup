@@ -15,7 +15,7 @@ cd /path/to/site
 git init
 ```
 
-Make sure you've installed Python 3. If you want to use a virtual environment, you can create one with
+Make sure you've installed Python 3. Create a virtual environment
 
 ```bash
 python3 -m venv venv
@@ -28,6 +28,8 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Create a file `env_var_prefix` which contains a single line with the prefix to use for the environment variables (such as `FSS_`). The prefix should end with an underscore.
+
 Define the required environment variables, as set out in the section *Environment variables* below. (If you are using an IDE, you might define these in your running configuration.)
 
 You can then run the following commands for launching the (development) server or running the tests.
@@ -35,11 +37,19 @@ You can then run the following commands for launching the (development) server o
 | Command | Purpose |
 | --- | --- |
 | `python manage.py runserver` | Launch the server |
-| `python manage.py test` | Run the tests |
+| `./run_tests.sh` | Run the tests |
+
+You might have to make the script `./run_tests.sh` executable,
+
+```bash
+chmod u+x run_tests.sh
+```
+
+Finally, you should modify the `README.md` file as required.
 
 ### On a remote server
 
-Ubuntu 14.04 must be running on the remote server, and there needs to be a `root` user.
+Ubuntu 14.04 or higher must be running on the remote server. The server should not be used for anything other than running the deployed website.
 
 Create a user `deploy` for deploying the site, and give that user sudo permissions:
 
@@ -86,7 +96,13 @@ cat ~/.ssh/id_rsa.pub
 
 Refer to to the instructions for your repository host like Github or Bitbucket as to how add your key top the host.
 
-Supervisor, which is used for running the Tornado server, logs both the standard output and the standard error to log files in the folder `/var/log/supervisor`. You should check these log files if the server doesn't start.
+Once all the these prerequisites are in place you may deploy the site by running
+
+```bash
+fab setup
+```
+
+Supervisor, which is used for running the Nginx server, logs both the standard output and the standard error to log files in the folder `/var/log/supervisor`. You should check these log files if the server doesn't start.
 
 ## Environment variables
 
@@ -114,7 +130,7 @@ The following variables are required for all modes:
 | `LOGGING_FILE_MAX_BYTES` | Maximum number of bytes before which the log file is rolled over | No | 5242880 | 1048576 |
 | `LOGGING_FILE_BACKUP_COUNT` | Number of backed up log files kept | No | 10 | 5 |
 | `LOGGING_MAIL_FROM_ADDRESS` | Email address to use as from address in log emails | No | `no-reply@saaoo.ac.za` | `no-reply@saaoo.ac.za` |
-| `LOGGING_MAIL_LOG_LEVEL` | Level of logging for logging to an email | No | `Error` | `ERROR` |
+| `LOGGING_MAIL_LOGGING_LEVEL` | Level of logging for logging to an email | No | `Error` | `ERROR` |
 | `LOGGING_MAIL_SUBJECT` | Subject for the log emails | No | `Error Logged` | `Error on Website` |
 | `LOGGING_MAIL_TO_ADDRESSES` | Comma separated list of email addresses to which error log emails are sent | No | None | `John  Doe <j.doe@wherever.org>, Mary Miller <mary@whatever.org>` |
 | `SECRET_KEY` | Key for password seeding | Yes | n/a | `s89ywnke56` |
