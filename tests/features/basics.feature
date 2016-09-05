@@ -1,7 +1,6 @@
 Feature: Illustrating the use of Behave
 
-  Scenario: Setting a number
+  Scenario: Accessing the homepage
+    When I access the homepage
+    Then I get a page with no error
 
-    Given a is 42
-    When I set b to be equal to a
-    Then b is 42

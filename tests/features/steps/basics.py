@@ -3,16 +3,11 @@ from behave import *
 use_step_matcher("re")
 
 
-@given("a is 42")
+@when('I access the homepage')
 def step_impl(context):
-    context.a = 42
+    context.response = context.client.get('/')
 
 
-@when("I set b to be equal to a")
+@then('I get a page with no error')
 def step_impl(context):
-    context.b = context.a
-
-
-@then("b is 42")
-def step_impl(context):
-    assert context.b == 42
+    assert context.response.status_code == 200
