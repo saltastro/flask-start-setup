@@ -26,6 +26,7 @@ def profile(length=25, profile_dir=None):
 def test():
     raise NotImplementedError('Please use the command "./run_tests.sh" for running the tests.')
 
+
 @manager.command
 def deploy():
     raise NotImplementedError('Please use the command "fab setup" for setting up the server and the command '
