@@ -12,8 +12,8 @@ host = os.environ[prefix + 'DEPLOY_HOST']
 username = os.environ[prefix + 'DEPLOY_USERNAME']
 repository = os.environ[prefix + 'DEPLOY_GIT_REPOSITORY']
 app_dir_name = os.environ[prefix + 'DEPLOY_APP_DIR_NAME']
-web_user = os.environ[prefix + 'DEPLOY_WEB_USER']
-web_user_group = os.environ[prefix + 'DEPLOY_WEB_USER_GROUP']
+web_user = os.environ.get(prefix + 'DEPLOY_WEB_USER', 'www-data')
+web_user_group = os.environ.get(prefix + 'DEPLOY_WEB_USER_GROUP', 'www-data')
 domain_name = os.environ.get(prefix + 'DEPLOY_DOMAIN_NAME', host)
 
 site_dir = '$HOME/' + app_dir_name
