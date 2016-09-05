@@ -3,3 +3,4 @@
 /FlaskStartSetup.iws
 *.pyc
 /env_var_prefix
+/venv
