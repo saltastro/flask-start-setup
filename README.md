@@ -1,6 +1,6 @@
 # Flask Start Setup
 
-A simple framework for getting started with a Flask site which is based on the book *Flask Web Development* by Miguel Grinberg (O'Reilly).
+A simple framework for getting started with a Flask site which is based on the books *Flask Web Development* by Miguel Grinberg (O'Reilly) and *Mastering Flask* by Jack Stouffer (Packt Publishing).
 
 ## Installation
 
@@ -111,7 +111,7 @@ The configuration file makes use of various environment variables. All of these 
 Most of the environment variables must be defined for various configurations, which are distinguished by different infixes for the variable name:
 
 | Configuration name | Infix |
-| -- | -- |
+| --- | --- |
 | development | `DEV_` |
 | testing | `TEST_` |
 | production | no prefix |
@@ -123,7 +123,7 @@ For example, if the content of the file `env_var_prefix` is `MY_APP` an environm
 The following variables are required for all modes:
 
 | Environment variable | Description | Required | Default | Example |
-| -- | -- | -- | -- | -- | -- |
+| --- | --- | --- | --- | --- | --- |
 | `DATABASE_URI` | URI for the database access | Yes | n/a | `mysql://user:password@your.server.ip/database` |
 | `LOGGING_FILE_BASE_PATH` | Base path for the error log(s) | Yes | n/a | `/var/log/my-app/errors.log` |
 | `LOGGING_FILE_LOGGING_LEVEL` | Level of logging for logging to a file | No | `ERROR` | `ERROR` |
@@ -139,7 +139,7 @@ The following variables are required for all modes:
 The following variable have no infix (but the prefix!) and are required only if you run the commands for setting up a remote server or deploying the site.
 
 | Environment variable | Description | Required | Default | Example |
-| -- | -- |
+| --- | --- |
 | DEPLOY_GIT_REPOSITORY | Git repository used for deploying the site | Yes | n/a | `git@bitbucket.org:your/repository.git` |
 | DEPLOY_HOST | Address of the deployment server | Yes | n/a | `my-app.org.za` |
 | DEPLOY_DOMAIN_NAME | Domain name for the website | No | Value of `DEPLOY_HOST` | `my-app.org.za` |
