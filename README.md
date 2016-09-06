@@ -311,6 +311,9 @@ cp run_tests.sh .git/hooks/pre-push
 chmod u+x .git/hooks/pre-push
 ```
 
+## Errors
+
+Errors are handled by the module `app.main.errors`, which makes use of Jinja2 templates. You might want to to customise these templates.
 
 
 
