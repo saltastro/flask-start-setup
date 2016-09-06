@@ -28,7 +28,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create a file `env_var_prefix` which contains a single line with the prefix to use for the environment variables (such as `FSS_`). The prefix should end with an underscore.
+Create a file `env_var_prefix` which contains a single line with the prefix to use for the environment variables (such as `FSS`). 
 
 Define the required environment variables, as set out in the section *Environment variables* below. (If you are using an IDE, you might define these in your running configuration.)
 
@@ -116,7 +116,7 @@ Most of the environment variables must be defined for various configurations, wh
 | testing | `TEST_` |
 | production | no prefix |
 
-Here tests refer to (automated) tests on your machine, and the deployment server could be the production server, or a server for testing.
+The script `run_tests.sh` uses the testing configuration. If you launch the server with the `manage.py` script, the development configuration is used. Code deployed to a remote server uses the production configuration.
 
 For example, if the content of the file `env_var_prefix` is `MY_APP` an environment variable name for the development configuration could be `MY_APP_DEV_DATABASE_URI`.
 
