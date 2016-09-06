@@ -20,3 +20,16 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.app_context.pop()
+
+
+class NoAuthBaseTestCase(BaseTestCase):
+    """Base class for Flask unit tests without authentication.
+
+    Apart from the functionality provided by the BaseTestClass, this class disables authentication checking, so that
+    login_required decorators will be ignored.
+    """
+
+    def setUp(self):
+        BaseTestCase.setUp(self)
+        self.app.config['LOGIN_DISABLED'] = True
+        self.app.login_manager.init_app(self.app)

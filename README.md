@@ -1,6 +1,6 @@
 # Flask Start Setup
 
-A simple framework for getting started with a Flask site which is based on the books *Flask Web Development* by Miguel Grinberg (O'Reilly) and *Mastering Flask* by Jack Stouffer (Packt Publishing).
+A simple framework for getting started with a Flask site, which is based on the books *Flask Web Development* by Miguel Grinberg (O'Reilly) and *Mastering Flask* by Jack Stouffer (Packt Publishing).
 
 ## Installation
 
@@ -260,15 +260,15 @@ Unit tests, Behave tests and PEP8 tests are supported.
 
 You should add all your unit tests to the folder `tests/unittests`. For convenience a base test case class `tests.unittests.base.BaseTestCase` is provided, which sets up and tears down the Flask environment. This class also creates a test client, which can be accessed as `self.client`. This test client is using cookies.
 
-A unit test using the `BaseTestClass` might look as follows.
+In addition, the `test.unittests.base` module offers a class `NoAuthBaseTestCase`, which extends the `BaseTestCase` class and disables authentication, meaning that `login_required` decorators for routes are ignored.
+
+A unit test using the `NoAuthBaseTestClass` might look as follows.
 
 ```python
-from flask import current_app
-
-from tests.unittests.base import BaseTestCase
+from tests.unittests.base import NoAuthBaseTestCase
 
 
-class BasicsTestCase(BaseTestCase):
+class NoAuthBasicsTestCase(NoAuthBaseTestCase):
     def test_homepage_exists(self):
         response = self.client.get('/')
         self.assertTrue(response.status_code == 200)
