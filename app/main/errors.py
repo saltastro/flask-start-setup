@@ -5,7 +5,7 @@ from . import main
 
 @main.errorhandler(500)
 def internal_server_error(e):
-    current_app.logger.error(str(e))
+    current_app.logger.error(str(e), exc_info=1)
     return render_template('500.html'), 500
 
 
@@ -16,5 +16,5 @@ def file_not_found_error(e):
 
 @main.errorhandler(Exception)
 def exception_raised(e):
-    current_app.logger.error(str(e))
+    current_app.logger.error(str(e), exc_info=1)
     return render_template('500.html'), 500
