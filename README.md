@@ -184,13 +184,13 @@ current_app.logger.error('This is an error.')
 current_app.logger.warning('This is a warning.')
 ```
 
-# Error handling
+## Error handling
 
 The main blueprint includes some barebones error handlers in `app/main/errors.py`, which you have to customise. You might also want to add additional error handlers in this file, such as for file not found or authentication errors.
 
 It is a good idea to log internal server errors and raised exceptions using logger described in the section on logging. The `errors.py` file does this in the `exception_raised` function.
 
-# Authentication
+## Authentication
 
 Authentication with Flask-Login is included. If you don't need this, you should remove the folder `app/auth`, remove the login manager initialisation
 
@@ -215,7 +215,7 @@ from the file `requirements.txt` in the root folder. (`x.y.z` denotes a version 
 
 The file `app/auth/views.py` contains an example implementation of a user class, as well as the functions required for the login manager. While you have to replace these with whatever need in your project, they should give you an idea of how to work with the login manager. More details can be found in Chapter 8 of Miguel Grinberg's book *Flask Web Development* (O'Reilly).
 
-# Templates
+## Templates
 
 The `templates` folder contains a base template (`base.html`), a home page (`index.html`) and an authentication form (`auth/login.html`). All of these should be customised to suit your needs.
 
