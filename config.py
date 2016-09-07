@@ -274,6 +274,9 @@ class Config:
             smtp_handler.setLevel(settings['logging_mail_logging_level'])
             app.logger.addHandler(smtp_handler)
 
+        # database access
+        app.config['SQLALCHEMY_DATABASE_URI'] = settings['database_uri']
+
         # use SSL?
         app.config['SSL_STATUS'] = False  # settings['ssl_status']
 

@@ -252,6 +252,25 @@ Flask-Bootstrap==w.x.y.z
 
 from the file `requirements.txt` in the root folder. (`w.x.y.z` denotes a version number.)
 
+## Database access
+
+The framework includes Flask-SQLAlchemy makes an SQLAlchemy instance available as a variable `db` in the `app` package. You can, for example, use this to create a Pandas dataframe from an SQL query:
+
+```python
+# Pandas doesn't ship with this framework, but you can install it with
+# pip install pandas
+import pandas as pd
+
+from app import db
+
+sql = 'SELECT * FROM SomeTable'
+df = pd.read_sql(sql, db.engine)
+```
+
+The framework installs mysqlclient. If you aren't using MySQL, you may uninstall this library, and you have to install whatever library you require.
+
+Note that the framework doesn't create any ORM models or offers any database migration support.
+
 ## Testing
 
 Unit tests, Behave tests and PEP8 tests are supported.
