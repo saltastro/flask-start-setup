@@ -254,7 +254,7 @@ from the file `requirements.txt` in the root folder. (`w.x.y.z` denotes a versio
 
 ## Database access
 
-The framework includes Flask-SQLAlchemy makes an SQLAlchemy instance available as a variable `db` in the `app` package. You can, for example, use this to create a Pandas dataframe from an SQL query:
+The framework includes Flask-SQLAlchemy and makes an SQLAlchemy instance available as a variable `db` in the `app` package. You can, for example, use this to create a Pandas dataframe from an SQL query:
 
 ```python
 # Pandas doesn't ship with this framework, but you can install it with
