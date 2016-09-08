@@ -93,8 +93,10 @@ def update_environment_variables_file():
 def update_log_dir():
     """Update the log directory.
 
-    The directory for the log files is created (if it doesn't exist yet), access is granted tto the user only, and
-     ownership of this file is transferred to the web user.
+    The directory for the log files is created (if it doesn't exist yet), access is granted to the user only, and
+    ownership of this file is transferred to the web user.
+
+    If the directory exists already, it is checked that it is actually owned by
     """
 
     settings = Config.settings('production')
@@ -102,11 +104,17 @@ def update_log_dir():
     sudo('if [[ ! -d {log_dir} ]]\n'
          'then\n'
          '    mkdir {log_dir}\n'
-         'fi'.format(log_dir=log_dir))
-    sudo('chmod 700 {log_dir}'.format(log_dir=log_dir))
-    sudo('chown {web_user}:{web_user_group} {log_dir}'.format(web_user=web_user,
-                                                              web_user_group=web_user_group,
-                                                              log_dir=log_dir))
+         '    chmod 700 {log_dir}\n'
+         '    chown {web_user}:{web_user_group} {log_dir}\n'
+         'elif [ `ls -ld {log_dir} | awk \'{{print $3}}\'` != "{web_user}" ]\n'
+         'then\n'
+         '    echo "The directory {log_dir} for the log files isn\'t owned by the web user ({web_user})."\n'
+         '    sleep 5\n'
+         '    exit 1\n'
+         'fi'.format(log_dir=log_dir,
+                     web_user=web_user,
+                     web_user_group=web_user_group))
+
 
 def setup():
     """Setup the remote server.
