@@ -127,6 +127,10 @@ def setup():
     # enable virtual environments
     sudo('pip3 install virtualenv')
 
+    # MySQL
+    sudo('apt-get install -y mysql-client')
+    sudo('apt-get install -y libmysqlclient-dev')
+
     # supervisor
     sudo('apt-get install -y supervisor')
 
