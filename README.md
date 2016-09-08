@@ -104,6 +104,14 @@ fab setup
 
 Supervisor, which is used for running the Nginx server, logs both the standard output and the standard error to log files in the folder `/var/log/supervisor`. You should check these log files if the server doesn't start.
 
+For subsequent updates you may just run
+
+```bash
+fab deploy
+```
+
+If you get an internal server error after updating, there might still be a uWSGI process bound to the requested port. In this case rebooting the server should help.
+
 ## Environment variables
 
 The configuration file makes use of various environment variables. All of these must have a common prefix which is defined in the root level file `env_var_prefix`. This file must have a single line with a text string, which is taken as the prefix. Leading and trailing white space as well as trailing underscores are ignored. An underscore is affixed to the prefix.
