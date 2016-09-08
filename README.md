@@ -49,6 +49,8 @@ Finally, you should modify the `README.md` file as required.
 
 ### On a remote server
 
+**Important:** When the site is deployed, a file `.env` is created, which contains settings which must be kept secret. **Ensure that this file is not put under version control.**
+
 Ubuntu 14.04 or higher must be running on the remote server, and standard commands like  The server should not be used for anything other than running the deployed website.
 
 Create a user `deploy` for deploying the site, and give that user sudo permissions:
