@@ -1,6 +1,6 @@
 # Flask Start Setup
 
-A simple framework for getting started with a Flask site, which is based on the books *Flask Web Development* by Miguel Grinberg (O'Reilly) and *Mastering Flask* by Jack Stouffer (Packt Publishing).
+A simple framework for getting started with a Flask site using a MySQL database, which is based on the books *Flask Web Development* by Miguel Grinberg (O'Reilly) and *Mastering Flask* by Jack Stouffer (Packt Publishing).
 
 ## Installation
 
@@ -49,7 +49,7 @@ Finally, you should modify the `README.md` file as required.
 
 ### On a remote server
 
-Ubuntu 14.04 or higher must be running on the remote server. The server should not be used for anything other than running the deployed website.
+Ubuntu 14.04 or higher must be running on the remote server, and standard commands like  The server should not be used for anything other than running the deployed website.
 
 Create a user `deploy` for deploying the site, and give that user sudo permissions:
 
