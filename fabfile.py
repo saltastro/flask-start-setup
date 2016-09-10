@@ -83,11 +83,6 @@ def update_environment_variables_file():
     sudo('chown {username}:{web_user_group} {env_file}'.format(username=username,
                                                                web_user_group=web_user_group,
                                                                env_file=env_file))
-    run('grep -Fxq ".env" {exclude_file}\n'
-        'if [[ $? = 0 ]]\n'
-        'then\n'
-        '    echo .env >> {exclude_file}\n'
-        'fi'.format(exclude_file=site_dir + '/.git/info/exclude'))
 
 
 def update_log_dir():
