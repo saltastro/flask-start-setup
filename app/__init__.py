@@ -11,12 +11,12 @@ from webassets.loaders import YAMLLoader
 from config import config, SSLStatus
 
 
-db = SQLAlchemy()
 assets = Environment()
+bootstrap = Bootstrap()
+db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
 login_manager.login_view = 'auth.login'
-bootstrap = Bootstrap()
 
 
 def create_app(config_name):
@@ -25,9 +25,9 @@ def create_app(config_name):
     config[config_name].init_app(app, config_name)
 
     assets.init_app(app)
+    bootstrap.init_app(app)
     db.init_app(app)
     login_manager.init_app(app)
-    bootstrap.init_app(app)
 
     assets_config = os.path.join(os.path.dirname(__file__), os.pardir, 'webassets.yaml')
     assets_loader = YAMLLoader(assets_config)
