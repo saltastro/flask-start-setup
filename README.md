@@ -262,6 +262,49 @@ Flask-Bootstrap==w.x.y.z
 
 from the file `requirements.txt` in the root folder. (`w.x.y.z` denotes a version number.)
 
+## Static files
+
+Static files should be put in the directory `app/static` (which is Flask's default). Static files have two problems:
+
+1. They should be bundled together, to avoid unnecessarily many HTTP requests.
+2. More importantly, they are cached by browsers, and you must ensure that an updated version will actually be loaded by the browser.
+
+This framework addresses both issues by using the Flask-Assets library, which creates bundles and attaches a GET parameter based on the bundles hash. To make use of this, you first have to define your bundles in the root-level file `webassets.yaml`. Here is an example:
+
+```yaml
+js-all:
+    filters: rjsmin
+    output: cache/all.js
+    contents:
+        - js/a.js
+        - js/b.js
+        - js/c/d.js
+
+css-all:
+    filters: yui_css
+    output: cache/all.css
+    contents:
+        - css/main/a.css
+        - css/main/b.css
+```
+
+Note the dashes before the file paths - these are indeed required!
+
+Then you can include any of the defined bundles in a Jinja2 template by using the `assets` tag. For example,
+
+```
+{% block scripts %}
+{{ super() }}
+{% assets 'js-all' %}
+<script src="{{ ASSET_URL }}"></script>
+{% endassets %}
+{% endblock %}
+```
+
+The generated bundles are put in the directory `app/static/cache`. When running the server in test or development mode, the original, individual files rather than the bundles will be included.
+
+The deploy script automatically generates the bundles on the production server, rather than relying on them being created on the fly when a page is requested. This implies that you *don't* have to give the web user write access to the cache directory.
+
 ## Database access
 
 The framework includes Flask-SQLAlchemy and makes an SQLAlchemy instance available as a variable `db` in the `app` package. You can, for example, use this to create a Pandas dataframe from an SQL query:
