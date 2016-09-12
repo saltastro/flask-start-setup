@@ -153,7 +153,8 @@ The following variable have no infix (but the prefix!) and are required only if 
 | DEPLOY_GIT_REPOSITORY | Git repository used for deploying the site | Yes | n/a | `git@bitbucket.org:your/repository.git` |
 | DEPLOY_HOST | Address of the deployment server | Yes | n/a | `my-app.org.za` |
 | DEPLOY_DOMAIN_NAME | Domain name for the website | No | Value of `DEPLOY_HOST` | `my-app.org.za` |
-| DEPLOY_USERNAME | Username for the deployment server | No | `deploy` | `deploy` |
+| DEPLOY_USER | User for the deployment server | No | `deploy` | `deploy` |
+| DEPLOY_USER_GROUP | Unix group for the deploy user | No | Value of `DEPLOY_USER` | `deploy` |
 | DEPLOY_APP_DIR_NAME | Directory name for the deployed code | Yes | n/a | `my_app` |
 | DEPLOY_WEB_USER | User for running the Tornado server | No | `www-data` | `www-data` |
 | DEPLOY_WEB_USER_GROUP | Unix group of the user running the Tornado server | No | `www-data` | `www-data` |
@@ -274,7 +275,7 @@ This framework addresses both issues by using the Flask-Assets library, which cr
 ```yaml
 js-all:
     filters: rjsmin
-    output: cache/all.js
+    output: cache/all.%(version)s.js
     contents:
         - js/a.js
         - js/b.js
@@ -282,13 +283,13 @@ js-all:
 
 css-all:
     filters: yui_css
-    output: cache/all.css
+    output: cache/all.%(version)s.css
     contents:
         - css/main/a.css
         - css/main/b.css
 ```
 
-Note the dashes before the file paths - these are indeed required!
+Note the dashes before the file paths - these are indeed required! Also note the '%(version)s' - this is a placeholder to be replaced with the first characters of the bundle's hash.
 
 Then you can include any of the defined bundles in a Jinja2 template by using the `assets` tag. For example,
 
