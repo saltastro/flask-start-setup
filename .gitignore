@@ -1,3 +1,5 @@
 .env
 /env_var_prefix
 /venv
+/app/static/.webassets-cache
+/app/static/cache
