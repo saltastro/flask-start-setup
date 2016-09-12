@@ -112,6 +112,31 @@ def update_log_dir():
                      web_user_group=web_user_group))
 
 
+def update_webassets():
+    # remove cache directories
+    static_dir = site_dir + '/app/static'
+    webassets_cache = static_dir + '/.webassets-cache'
+    cache = static_dir + '/cache'
+    run('if [[ -d {webassets_cache} ]]\n'
+        'then\n'
+        '    rm -r {webassets_cache}\n'
+        'fi'.format(webassets_cache=webassets_cache))
+    run('if [[ -d {cache} ]]\n'
+        'then\n'
+        '    rm -r {cache}\n'
+        'fi'.format(cache=cache))
+
+    # create bundles (must be run as root, as the deploy user doesn't own the error log)
+    sudo('cd {site_dir}; export FLASK_APP=run_server.py; export FLASK_CONFIG=production; venv/bin/flask assets build'.format(site_dir=site_dir))
+
+    # make deploy user owner of the cache directories
+    sudo('chown -R {deploy_user}:{deploy_user_group} {webassets_cache} {cache}'
+         .format(deploy_user=deploy_user,
+                 deploy_user_group=deploy_user_group,
+                 webassets_cache=webassets_cache,
+                 cache=cache))
+
+
 def setup():
     """Setup the remote server.
 
@@ -134,6 +159,9 @@ def setup():
     # MySQL
     sudo('apt-get install -y mysql-client')
     sudo('apt-get install -y libmysqlclient-dev')
+
+    # Java
+    sudo('apt-get install -y default-jre')
 
     # supervisor
     sudo('apt-get install -y supervisor')
@@ -171,6 +199,9 @@ def setup():
     # this must happen before Supervisor or Nginx are updated
     update_log_dir()
 
+    # create static file bundles
+    update_webassets()
+
     # setup Supervisor
     update_supervisor()
 
@@ -201,6 +232,9 @@ def deploy():
     # update the log directory
     # this must happen before Supervisor or Nginx are updated
     update_log_dir()
+
+    # update static file bundles
+    update_webassets()
 
     # update Supervisor
     update_supervisor()
