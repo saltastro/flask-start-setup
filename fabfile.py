@@ -9,7 +9,8 @@ from config import Config
 # get remote host and username
 prefix = Config.environment_variable_prefix()
 host = os.environ[prefix + 'DEPLOY_HOST']
-username = os.environ[prefix + 'DEPLOY_USERNAME']
+deploy_user = os.environ.get(prefix + 'DEPLOY_USER', 'deploy')
+deploy_user_group = os.environ.get(prefix + 'DEPLOY_USER_GROUP', deploy_user)
 repository = os.environ[prefix + 'DEPLOY_GIT_REPOSITORY']
 app_dir_name = os.environ[prefix + 'DEPLOY_APP_DIR_NAME']
 web_user = os.environ.get(prefix + 'DEPLOY_WEB_USER', 'www-data')
@@ -18,7 +19,7 @@ domain_name = os.environ.get(prefix + 'DEPLOY_DOMAIN_NAME', host)
 
 site_dir = '$HOME/' + app_dir_name
 
-env.hosts = ['{username}@{host}'.format(username=username, host=host)]
+env.hosts = ['{username}@{host}'.format(username=deploy_user, host=host)]
 
 
 def upgrade_libs():
@@ -72,15 +73,15 @@ def update_environment_variables_file():
         f.write(file_content)
         f.flush()
         tmp_env_file = '/tmp/.env.{timestamp}'.format(timestamp=time.time())
-        local('scp {path} {username}@{host}:{tmp_env_file}'.format(username=username,
-                                                                          host=host,
-                                                                          path=f.name,
-                                                                          site_dir=site_dir,
-                                                                          tmp_env_file=tmp_env_file))
+        local('scp {path} {username}@{host}:{tmp_env_file}'.format(username=deploy_user,
+                                                                   host=host,
+                                                                   path=f.name,
+                                                                   site_dir=site_dir,
+                                                                   tmp_env_file=tmp_env_file))
     env_file = '{site_dir}/.env'.format(site_dir=site_dir)
     run('mv {tmp_env_file} {env_file}'.format(tmp_env_file=tmp_env_file, env_file=env_file))
     run('chmod 640 {env_file}'.format(env_file=env_file))
-    sudo('chown {username}:{web_user_group} {env_file}'.format(username=username,
+    sudo('chown {username}:{web_user_group} {env_file}'.format(username=deploy_user,
                                                                web_user_group=web_user_group,
                                                                env_file=env_file))
 
