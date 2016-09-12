@@ -1,0 +1,13 @@
+js-all:
+    filters: rjsmin
+    output: cache/all.%(version)s.js
+    contents:
+        - js/c.js
+        - js/main/d.js
+
+css-all:
+    filters: yui_css
+    output: cache/all.%(version)s.css
+    contents:
+        - css/a.css
+        - css/main/b.css
