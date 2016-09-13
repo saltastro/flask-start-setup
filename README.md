@@ -304,7 +304,7 @@ Then you can include any of the defined bundles in a Jinja2 template by using th
 
 The generated bundles are put in the directory `app/static/cache`. When running the server in test or development mode, the original, individual files rather than the bundles will be included.
 
-The deploy script automatically generates the bundles on the production server, rather than relying on them being created on the fly when a page is requested. This implies that you *don't* have to give the web user write access to the cache directory.
+The deploy script automatically generates the bundles on the production server, rather than relying on them being created on the fly when a page is requested. This implies that you *don't* have to give the web user write access to the bundle directory. That user still needs write access to the directory `app/static/.webassets_cache`, though, and the deploy script takes care of that.
 
 Some care must be taken when it comes to unit tests. If the Flask-Assets environment is defined as a global variable, running more than one unit test may result in multiple registration of the same bundle, which results in an error of the form
 

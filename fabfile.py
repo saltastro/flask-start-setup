@@ -113,7 +113,7 @@ def update_log_dir():
 
 
 def update_webassets():
-    # remove cache directories
+    # remove bundle and cache directories
     static_dir = site_dir + '/app/static'
     webassets_cache = static_dir + '/.webassets-cache'
     cache = static_dir + '/cache'
@@ -127,14 +127,20 @@ def update_webassets():
         'fi'.format(cache=cache))
 
     # create bundles (must be run as root, as the deploy user doesn't own the error log)
-    sudo('cd {site_dir}; export FLASK_APP=run_server.py; export FLASK_CONFIG=production; venv/bin/flask assets build'.format(site_dir=site_dir))
+    sudo('cd {site_dir}; export FLASK_APP=run_server.py; export FLASK_CONFIG=production; venv/bin/flask assets build'
+         .format(site_dir=site_dir))
 
-    # make deploy user owner of the cache directories
-    sudo('chown -R {deploy_user}:{deploy_user_group} {webassets_cache} {cache}'
+    # make deploy user owner of the bundle directory
+    sudo('chown -R {deploy_user}:{deploy_user_group} {cache}'
          .format(deploy_user=deploy_user,
                  deploy_user_group=deploy_user_group,
-                 webassets_cache=webassets_cache,
                  cache=cache))
+
+    # make web user owner of the bundle directory
+    sudo('chown -R {web_user}:{web_user_group} {webassets_cache}'
+         .format(web_user=web_user,
+                 web_user_group=web_user_group,
+                 webassets_cache=webassets_cache))
 
 
 def setup():
