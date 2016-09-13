@@ -46,6 +46,7 @@ def update_nginx_conf():
         domain_name=domain_name))
     sudo('service nginx restart')
 
+
 def update_environment_variables_file():
     """Update the environment variables file on the server.
 
