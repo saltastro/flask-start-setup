@@ -112,7 +112,13 @@ For subsequent updates you may just run
 fab deploy
 ```
 
-If you get an internal server error after updating, there might still be a uWSGI process bound to the requested port. In this case rebooting the server should help.
+If you get an internal server error after updating, there might still be a uWSGI process bound to the requested port. Also, it seems that sometimes changes aren't picked up after deployment, even though Supervisor is restarted. 
+
+In these cases rebooting the server should help. You can easily force the reboot by executing
+ 
+ ```bash
+ fab reboot
+ ```
 
 ## Environment variables
 

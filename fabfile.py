@@ -247,3 +247,10 @@ def deploy():
 
     # update Nginx
     update_nginx_conf()
+
+
+def reboot():
+    """Reboot the remote server.
+    """
+
+    sudo('reboot')
