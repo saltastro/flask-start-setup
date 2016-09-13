@@ -15,7 +15,7 @@ cd /path/to/site
 git init
 ```
 
-Make sure you've installed Python 3. Create a virtual environment
+Make sure you've installed Java (required for building bundles of static files with Flask-Assets) and Python 3. Create a virtual environment
 
 ```bash
 python3 -m venv venv
