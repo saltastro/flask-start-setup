@@ -32,6 +32,7 @@ def create_app(config_name):
     login_manager.init_app(app)
 
     assets_config = os.path.join(os.path.dirname(__file__), os.pardir, 'webassets.yaml')
+    assets._named_bundles = {}  # avoid duplicate registration in unit tests
     assets_loader = YAMLLoader(assets_config)
     bundles = assets_loader.load_bundles(assets)
     assets.register(bundles)

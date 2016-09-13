@@ -306,6 +306,14 @@ The generated bundles are put in the directory `app/static/cache`. When running 
 
 The deploy script automatically generates the bundles on the production server, rather than relying on them being created on the fly when a page is requested. This implies that you *don't* have to give the web user write access to the cache directory.
 
+Some care must be taken when it comes to unit tests. If the Flask-Assets environment is defined as a global variable, running more than one unit test may result in multiple registration of the same bundle, which results in an error of the form
+
+```
+webassets.env.RegisterError: Another bundle is already registered as ...
+```
+
+This framework circumvents the issue by removing all existing bundles before attempting to load bundles in the app's `__init__.py` file.
+
 ## Database access
 
 The framework includes Flask-SQLAlchemy and makes an SQLAlchemy instance available as a variable `db` in the `app` package. You can, for example, use this to create a Pandas dataframe from an SQL query:
