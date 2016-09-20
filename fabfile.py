@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+import yaml
 
 from fabric.api import local, env, run, sudo
 
@@ -16,8 +17,17 @@ app_dir_name = os.environ[prefix + 'DEPLOY_APP_DIR_NAME']
 web_user = os.environ.get(prefix + 'DEPLOY_WEB_USER', 'www-data')
 web_user_group = os.environ.get(prefix + 'DEPLOY_WEB_USER_GROUP', 'www-data')
 domain_name = os.environ.get(prefix + 'DEPLOY_DOMAIN_NAME', host)
+conda_dir = os.environ[prefix + 'DEPLOY_CONDA_DIR']
+
+# name of the Anaconda environment
+conda_env = yaml.load(open('environment.yml'))['name']
 
 site_dir = '$HOME/' + app_dir_name
+conda_env_dir = '{conda_dir}/envs/{conda_env}'.format(conda_dir=conda_dir, conda_env=conda_env)
+
+# full path to the conda commands
+conda_root_command = '{conda_dir}/bin/conda'.format(conda_dir=conda_dir)
+conda_env_command = '{conda_env_dir}/bin/conda'.format(conda_env_dir=conda_env_dir)
 
 env.hosts = ['{username}@{host}'.format(username=deploy_user, host=host)]
 
@@ -29,7 +39,9 @@ def upgrade_libs():
 
 def update_supervisor():
     tmp_supervisor_conf = '/tmp/supervisor.{timestamp}.conf'.format(timestamp=time.time())
-    sudo('sed s=---SITE_PATH---={site_dir}= {site_dir}/supervisor.conf > {tmp_supervisor_conf}'.format(
+    sudo('sed s=---CONDA_ENV_PATH---={conda_env_dir}= {site_dir}/supervisor.conf > {tmp_supervisor_conf}'.format(
+        conda_env_dir=conda_env_dir, site_dir=site_dir, tmp_supervisor_conf=tmp_supervisor_conf))
+    sudo('sed s=---SITE_PATH---={site_dir}= {tmp_supervisor_conf} > {tmp_supervisor_conf}'.format(
         site_dir=site_dir, tmp_supervisor_conf=tmp_supervisor_conf))
     sudo('sed s=---WEB_USER---={web_user}= {tmp_supervisor_conf} > /etc/supervisor/conf.d/supervisor.conf'.format(
         web_user=web_user, tmp_supervisor_conf=tmp_supervisor_conf))
@@ -118,14 +130,14 @@ def update_webassets():
     static_dir = site_dir + '/app/static'
     webassets_cache = static_dir + '/.webassets-cache'
     cache = static_dir + '/cache'
-    run('if [[ -d {webassets_cache} ]]\n'
-        'then\n'
-        '    rm -r {webassets_cache}\n'
-        'fi'.format(webassets_cache=webassets_cache))
     run('if [[ -d {cache} ]]\n'
         'then\n'
         '    rm -r {cache}\n'
         'fi'.format(cache=cache))
+    sudo('if [[ -d {webassets_cache} ]]\n'
+         'then\n'
+         '    rm -r {webassets_cache}\n'
+         'fi'.format(webassets_cache=webassets_cache))
 
     # create bundles (must be run as root, as the deploy user doesn't own the error log)
     sudo('cd {site_dir}; export FLASK_APP=run_server.py; export FLASK_CONFIG=production; venv/bin/flask assets build'
@@ -144,6 +156,13 @@ def update_webassets():
                  webassets_cache=webassets_cache))
 
 
+def update_conda_environment():
+    run('cd {site_dir}\n'
+        '{conda_env_command} env update -f environment.yml'
+        .format(conda_env_command=conda_root_command, site_dir=site_dir))
+
+
+
 def setup():
     """Setup the remote server.
 
@@ -156,12 +175,6 @@ def setup():
     # necessary to install many Python libraries
     sudo('apt-get install -y build-essential')
     sudo('apt-get install -y git')
-    sudo('apt-get install -y python3')
-    sudo('apt-get install -y python3-pip')
-    sudo('apt-get install -y python3-all-dev')
-
-    # enable virtual environments
-    sudo('pip3 install virtualenv')
 
     # MySQL
     sudo('apt-get install -y mysql-client')
@@ -185,18 +198,15 @@ def setup():
     # create environment variable prefix file
     run('cd {site_dir}; echo {prefix} > env_var_prefix'.format(prefix=prefix, site_dir=site_dir))
 
-    # create a virtual environment (if it doesn't exist yet)
+    # create a Conda environment (if it doesn't exist yet)
     run('cd {site_dir}\n'
-        'if [[ ! -d venv ]]\n'
+        'if [[ ! -d {conda_env_dir} ]]\n'
         'then\n'
-        '    python3 -m virtualenv venv\n'
-        'fi'.format(site_dir=site_dir))
+        '    {conda_root_command} env create -f environment.yml\n'
+        'fi'.format(conda_root_command=conda_root_command, site_dir=site_dir, conda_env_dir=conda_env_dir))
 
     # install Python libraries
-    run('cd {site_dir}\n'
-        'source venv/bin/activate\n'
-        'pip install -r requirements.txt\n'
-        'deactivate'.format(site_dir=site_dir))
+    update_conda_environment()
 
     # setup the environment variables file
     # this must happen before Supervisor or Nginx are updated
@@ -217,6 +227,9 @@ def setup():
 
 
 def deploy():
+    """Deploy the app to the remote server.
+    """
+
     # test everything
     local('./run_tests.sh')
 
@@ -227,10 +240,7 @@ def deploy():
     run('cd {site_dir}; git pull'.format(site_dir=site_dir))
 
     # install Python libraries
-    run('cd {site_dir}\n'
-        'source venv/bin/activate\n'
-        'pip install -r requirements.txt\n'
-        'deactivate'.format(site_dir=site_dir))
+    update_conda_environment()
 
     # update the environment variables file
     # this must happen before Supervisor or Nginx are updated

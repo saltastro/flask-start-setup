@@ -15,17 +15,14 @@ cd /path/to/site
 git init
 ```
 
-Make sure you've installed Java (required for building bundles of static files with Flask-Assets) and Python 3. Create a virtual environment
+[Anaconda](https://docs.continuum.io/anaconda/install) or [Miniconda](http://conda.pydata.org/miniconda.html) must be installed.
+
+Make sure you've installed [Java](http://www.oracle.com/technetwork/java/javase/downloads/index-jsp-138363.html) (required for building bundles of static files with Flask-Assets).
+
+Open the file `environment.yml` and replace the environment name with a more suitable one. Save the file and create the environment by executing
 
 ```bash
-python3 -m venv venv
-```
-
-and then install the required Python libraries,
-
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
+conda env create -f environment.yml
 ```
 
 Create a file `env_var_prefix` which contains a single line with the prefix to use for the environment variables (such as `FSS`). 
@@ -51,7 +48,7 @@ Finally, you should modify the `README.md` file as required.
 
 **Important:** When the site is deployed, a file `.env` is created, which contains settings which must be kept secret. **Ensure that this file is not put under version control.**
 
-Ubuntu 14.04 or higher must be running on the remote server, and standard commands like  The server should not be used for anything other than running the deployed website.
+Ubuntu 14.04 or higher must be running on the remote server, and standard commands like`ssh` must be installed. The server should not be used for anything other than running the deployed website.
 
 Create a user `deploy` for deploying the site, and give that user sudo permissions:
 
@@ -63,6 +60,8 @@ gpasswd -a deploy sudo
 You may choose another username for this user, but then you have to set the `<PREFIX>_SERVER_USERNAME` environment variable accordingly. See the section on environment variables for an explanation of the prefix.
 
 Make sure wget is installed on the server.
+
+Login as the deploy user and install [Anaconda](https://docs.continuum.io/anaconda/install) or [Miniconda](http://conda.pydata.org/miniconda.html).
 
 Unless your repository has public access, you should also generate an SSL key for the deploy user. Check whether there is a file `~/.ssh/id_rsa.pub` already. If there isn't, create a new public key by running
 
@@ -103,6 +102,8 @@ Once all the these prerequisites are in place you may deploy the site by running
 ```bash
 fab setup
 ```
+
+If the Conda environment cannot be created, you should create it manually. This might be the case if Conda cannot find one of the libraries in its channels. (You may resort to using pip then.)
 
 Supervisor, which is used for running the Nginx server, logs both the standard output and the standard error to log files in the folder `/var/log/supervisor`. You should check these log files if the server doesn't start.
 
@@ -164,6 +165,7 @@ The following variable have no infix (but the prefix!) and are required only if 
 | DEPLOY_APP_DIR_NAME | Directory name for the deployed code | Yes | n/a | `my_app` |
 | DEPLOY_WEB_USER | User for running the Tornado server | No | `www-data` | `www-data` |
 | DEPLOY_WEB_USER_GROUP | Unix group of the user running the Tornado server | No | `www-data` | `www-data` |
+| DEPLOY_CONDA_DIR | Anaconda root directory on the deployment server | Yes | n/a | `/home/deploy/anaconda` |
 
 ## Adding your own environment variables
 
@@ -339,6 +341,31 @@ The framework installs mysqlclient. If you aren't using MySQL, you may uninstall
 
 Note that the framework doesn't create any ORM models or offers any database migration support.
 
+## Bokeh
+
+By default, this framework will install Bokeh; if you don;'t need this you should remove the respective line from the `requirements.txt` file.
+
+In case you want to add interactive plots to your website, you should consider using a Bokeh server. If you set the `DEPLOY_WITH_BOKEH_SERVER` environment variable to `True` a Bokeh server instance is launched on the deployment server when you deploy the app. Bokeh's default port 5006 is used.
+
+Assuming you have a Bokeh model (such as a plot or column), you can then obtain the HTML for including it on a web page by code like the following.
+
+```python
+from contextlib import closing
+
+from bokeh.client import push_session
+from bokeh.document import Document
+from bokeh.embed import autoload_server
+
+document = Document()
+document.add_root(model)  # model is your Bokeh model such as a plot
+document.title = suffix
+
+with closing(push_session(document)) as session:
+    script = autoload_server(None, session_id=session.id)
+
+return script
+```
+
 ## Forms
 
 This framework doesn't ship with any form library. However, the following notes might be of help if you need to create forms for your site.
@@ -347,6 +374,7 @@ This framework doesn't ship with any form library. However, the following notes 
 * Flask-Bootstrap comes with a template function `quick_form` for easily generating a form in Jinja2 template. However, more often than not you are better off rolling your own html.
 * By default, Flask WTF uses CSRF, and that's a good thing. But in some cases, it's unnecessary. For example, imagine a page showing a plot of the exchange rate of the Rand for a user-supplied date range. When you load the page, last week should be inserted as the date range into the date input field, and the corresponding plot should be shown. As there is no CSRF token when you load the page by a GET request, this wouldn't be possible with CSRF enabled. To disable it, pass `csrf_enabled=False` to the form constructor.
 * If you want to do whatever the form is for (such as showing the plot of exchange rates in the note above) irrespective of whether the user has hit the submit button, you can use Flask-WTF's `validate` (rather than `validate_on_submit`) method for form validation.
+* When creating WTForm input elements in a Jinja2 template, you may use the `class_` argument to set the element's class attribute. This is particularly useful if you want to add, say, a datepicker.
 
 The following example illustrates these points.
 
@@ -419,13 +447,13 @@ The required template (called `date_range_form.html` in the code above) could lo
 ```html
 <form method="POST" class="form-group">
     {{ form.hidden_tag() }}
-    {{ form.start_date.label() }} {{ form.start_date() }}
+    {{ form.start_date.label() }} {{ form.start_date(class_='datepicker') }}
     {% if form.start_date.errors %}
         {% for e in form.start_date.errors %}
             <span class="error">{{ e }}</span>
         {% endfor %}
     {% endif %}
-    {{ form.end_date.label() }} {{ form.end_date() }}
+    {{ form.end_date.label() }} {{ form.end_date(class_='datepicker') }}
     {% if form.end_date.errors %}
         {% for e in form.end_date.errors %}
             <span class="error">{{ e }}</span>
