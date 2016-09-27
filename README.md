@@ -64,6 +64,8 @@ You may choose another username for this user, but then you have to set the `<PR
 
 Make sure wget is installed on the server.
 
+Login as the deploy user.
+
 Unless your repository has public access, you should also generate an SSL key for the deploy user. Check whether there is a file `~/.ssh/id_rsa.pub` already. If there isn't, create a new public key by running
 
 ```bash
