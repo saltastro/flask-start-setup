@@ -172,6 +172,12 @@ def setup():
     You should only have to call this task once, but re-running it should cause no problems.
     """
 
+    # test everything
+    local('./run_tests.sh')
+
+    # push Git content to the remote repository
+    local('git push')
+
     # upgrade/update apt
     upgrade_libs()
 
