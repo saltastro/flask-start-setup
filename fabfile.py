@@ -16,6 +16,7 @@ app_dir_name = os.environ[prefix + 'DEPLOY_APP_DIR_NAME']
 web_user = os.environ.get(prefix + 'DEPLOY_WEB_USER', 'www-data')
 web_user_group = os.environ.get(prefix + 'DEPLOY_WEB_USER_GROUP', 'www-data')
 domain_name = os.environ.get(prefix + 'DEPLOY_DOMAIN_NAME', host)
+bokeh_server_port = os.environ.get(prefix + 'DEPLOY_BOKEH_SERVER_PORT', 5100)
 
 site_dir = '$HOME/' + app_dir_name
 
@@ -28,10 +29,21 @@ def upgrade_libs():
 
 
 def update_supervisor():
-    sed = 'sed s=---SITE_PATH---={site_dir}= {site_dir}/supervisor.conf' \
-          '| sed s=---WEB_USER---={web_user}='.format(
+    # Python files to load into the Bokeh server
+    files = [f for f in os.listdir('bokeh_server') if f.lower().endswith('.py')]
+
+    # replace placeholders
+    sed = 'sed -e" s=---SITE_PATH---={site_dir}=g"' \
+          '    -e "s=---WEB_USER---={web_user}=g"' \
+          '    -e "s=---HOST---={host}=g"' \
+          '    -e "s=---BOKEH_SERVER_PORT---={bokeh_server_port}=g"' \
+          '    -e "s=---FILES---={files}=g"' \
+          '    {site_dir}/supervisor.conf '.format(
         site_dir=site_dir,
-        web_user=web_user)
+        web_user=web_user,
+        host=domain_name,
+        bokeh_server_port=bokeh_server_port,
+        files=' '.join(files))
     sudo('{sed} > /etc/supervisor/conf.d/{domain_name}.conf'.format(
         sed=sed,
         domain_name=domain_name))
