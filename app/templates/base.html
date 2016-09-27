@@ -6,6 +6,13 @@
     {{ super() }}
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    {% for f in bokeh_resources.css_files %}
+       <link rel="stylesheet" href="{{ f }}">
+    {% endfor %}
+
+    {% for f in bokeh_resources.js_files %}
+        <script src="{{ f }}"></script>
+    {% endfor %}
 {% endblock %}
 
 {% block navbar %}
