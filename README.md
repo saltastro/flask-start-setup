@@ -2,6 +2,8 @@
 
 A simple framework for getting started with a Flask site using a MySQL database, which is based on the books *Flask Web Development* by Miguel Grinberg (O'Reilly) and *Mastering Flask* by Jack Stouffer (Packt Publishing).
 
+The framework will launch a Bokeh server on your deployment host. See the section on Bokeh to find out what to do if you don't need this.
+
 ## Installation
 
 ### On your machine for development
@@ -162,7 +164,6 @@ The following variable have no infix (but the prefix!) and are required only if 
 | DEPLOY_APP_DIR_NAME | Directory name for the deployed code | Yes | n/a | `my_app` |
 | DEPLOY_WEB_USER | User for running the Tornado server | No | `www-data` | `www-data` |
 | DEPLOY_WEB_USER_GROUP | Unix group of the user running the Tornado server | No | `www-data` | `www-data` |
-| DEPLOY_USE_BOKEH_SERVER | No | `False` | `False` |
 | DEPLOY_BOKEH_SERVER_PORT | No | 5100 | 5100 |
 
 ## Adding your own environment variables
@@ -341,9 +342,20 @@ Note that the framework doesn't create any ORM models or offers any database mig
 
 ## Bokeh
 
-By default, this framework will install Bokeh; if you don't need this you should remove the respective line from the `requirements.txt` file, delete the Bokeh related script and link elements from `app/templates/base.html` and remove the `bokeh_server` directory.
+By default, this framework will launch a Bokeh server on your deployment server, which allows you to add interactive Bokeh plots to your site. If you don't need this you should:
 
-In case you want to add interactive plots to your website, you should consider using a Bokeh server. If you set the `DEPLOY_WITH_BOKEH_SERVER` environment variable to `True`, a Bokeh server is launched on the deployment server when you deploy the app. By default port 5100 is used, but you may change this by setting the `DEPLOY_BOKEH_SERVER_PORT` environment variable.
+* Remove the `bokeh_server` directory.
+* Update `supervisor.conf`.
+* Update `nginx.conf`.
+* Optionally, update `fabfile.py`
+
+If you don't need Bokeh at all, you should also:
+
+* Remove the Bokeh related content from the head block in `app/templates/base.html`.
+* Remove the file `app/bokeh_util.py`.
+* Remove the Bokeh requirement from the file `requirements.txt`.
+
+By default the Bokeh server is listening on port 5100, but you may change the port by setting the `DEPLOY_BOKEH_SERVER_PORT` environment variable.
 ```
 
 ### Static Bokeh plots
@@ -387,6 +399,8 @@ In order to add JavaScript to your plot, you may define a callback with CustomJS
 While adding JavaScript in this way is straightforward, it is limited. For example, you cannot perform a new database query. Also, it is arguably much easier to define your callbacks in Python, enjoying full IDE support, rather than to have write a string containing JavaScript code.
 
 These shortcomings fall away if you use a Bokeh server for hosting your plot, as then you you can add (Python) callbacks to your widgets which can update your plot's source data. An example of this is shown below.
+
+**Plots served by the Bokeh server are not password-protected.** If you require authentication, you have to add this to the nginx configuration.
 
 You need to put the file with your plot in the folder `bokeh_server`. All files in this folder (but not in its subfolders) is assumed to contain a plot to be hosted. So you should avoid putting helper files in this folder (although you are perfectly fine to put them in subfolders).
 
