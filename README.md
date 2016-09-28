@@ -45,7 +45,7 @@ You might have to make the script `./run_tests.sh` executable,
 chmod u+x run_tests.sh
 ```
 
-Finally, you should modify the `README.md` file as required.
+Finally, you should modify the `README.md` file as required, and add a `LICENSE.txt` file.
 
 ### On a remote server
 
