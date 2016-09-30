@@ -109,8 +109,17 @@ class Config:
         except:
             ssl_status = SSLStatus.ENABLED
 
+        # database migration
+        migration_tool = os.environ.get(prefix + 'DB_MIGRATION_TOOL', 'Flyway')
+        flyway_command = os.environ.get(prefix + 'DB_MIGRATION_FLYWAY_COMMAND', 'flyway')
+        migration_sql_dir = os.environ.get(prefix + 'DB_MIGRATION_SQL_DIR', 'db_migrations')
+
+        # enable logging?
+        with_logging = int(os.environ.get(prefix + 'WITH_LOGGING', True)) != 0
+
         return dict(
             database_uri=database_uri,
+            flyway_command=flyway_command,
             logging_file_base_path=logging_file_base_path,
             logging_file_logging_level=logging_file_logging_level,
             logging_file_logging_level_name=logging_file_logging_level_name,
@@ -122,8 +131,11 @@ class Config:
             logging_mail_logging_level_name=logging_mail_logging_level_name,
             logging_mail_subject=logging_mail_subject,
             logging_mail_to_addresses=to_addresses,
+            migration_sql_dir=migration_sql_dir,
+            migration_tool=migration_tool,
             secret_key=secret_key,
-            ssl_status=ssl_status
+            ssl_status=ssl_status,
+            with_logging=with_logging
         )
 
     @staticmethod
@@ -258,21 +270,22 @@ class Config:
         # secret key
         app.config['SECRET_KEY'] = settings['secret_key']
 
-        # logging to file
-        file_handler = RotatingFileHandler(filename=settings['logging_file_base_path'],
-                                           maxBytes=settings['logging_file_max_bytes'],
-                                           backupCount=settings['logging_file_backup_count'])
-        file_handler.setLevel(settings['logging_file_logging_level'])
-        app.logger.addHandler(file_handler)
+        if settings['with_logging']:
+            # logging to file
+            file_handler = RotatingFileHandler(filename=settings['logging_file_base_path'],
+                                               maxBytes=settings['logging_file_max_bytes'],
+                                               backupCount=settings['logging_file_backup_count'])
+            file_handler.setLevel(settings['logging_file_logging_level'])
+            app.logger.addHandler(file_handler)
 
-        # logging to email
-        if settings['logging_mail_host'] and settings['logging_mail_to_addresses']:
-            smtp_handler = SMTPHandler(mailhost=settings['logging_mail_host'],
-                                       fromaddr=settings['logging_mail_from_address'],
-                                       toaddrs=settings['logging_mail_to_addresses'],
-                                       subject=settings['logging_mail_subject'])
-            smtp_handler.setLevel(settings['logging_mail_logging_level'])
-            app.logger.addHandler(smtp_handler)
+            # logging to email
+            if settings['logging_mail_host'] and settings['logging_mail_to_addresses']:
+                smtp_handler = SMTPHandler(mailhost=settings['logging_mail_host'],
+                                           fromaddr=settings['logging_mail_from_address'],
+                                           toaddrs=settings['logging_mail_to_addresses'],
+                                           subject=settings['logging_mail_subject'])
+                smtp_handler.setLevel(settings['logging_mail_logging_level'])
+                app.logger.addHandler(smtp_handler)
 
         # database access
         app.config['SQLALCHEMY_DATABASE_URI'] = settings['database_uri']

@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 import tempfile
 import time
 
@@ -6,8 +8,14 @@ from fabric.api import local, env, run, sudo
 
 from config import Config
 
-# get variables
+# environment variable prefix
 prefix = Config.environment_variable_prefix()
+
+# disable logging (as otherwise we would have to use the production setting for the log file location)
+os.environ[prefix + 'WITH_LOGGING'] = '0'
+
+# get variables
+settings = Config.settings('production')
 host = os.environ[prefix + 'DEPLOY_HOST']
 deploy_user = os.environ.get(prefix + 'DEPLOY_USER', 'deploy')
 deploy_user_group = os.environ.get(prefix + 'DEPLOY_USER_GROUP', deploy_user)
@@ -17,10 +25,27 @@ web_user = os.environ.get(prefix + 'DEPLOY_WEB_USER', 'www-data')
 web_user_group = os.environ.get(prefix + 'DEPLOY_WEB_USER_GROUP', 'www-data')
 domain_name = os.environ.get(prefix + 'DEPLOY_DOMAIN_NAME', host)
 bokeh_server_port = os.environ.get(prefix + 'DEPLOY_BOKEH_SERVER_PORT', 5100)
+migration_tool = settings['migration_tool']
+migration_sql_dir = settings['migration_sql_dir']
 
 site_dir = '$HOME/' + app_dir_name
 
 env.hosts = ['{username}@{host}'.format(username=deploy_user, host=host)]
+
+
+def migrate_database():
+    if migration_tool == 'None':
+        return
+    elif migration_tool == 'Flyway':
+        root_dir = os.path.abspath(os.path.join(__file__, os.pardir))
+        local('export FLASK_APP=site_app.py; FLASK_CONFIG=production; {root_dir}/venv/bin/flask flyway'\
+            .format(root_dir=root_dir))
+    elif migration_tool == 'Flask-Migrate':
+        local('export FLASK_APP=site_app.py; FLASK_CONFIG=production; venv/bin/flask db upgrade -d {sql_dir}'
+              .format(sql_dir=migration_sql_dir))
+    else:
+        print('Unknown database migration tool: {tool}'.format(tool=migration_tool))
+        sys.exit(1)
 
 
 def upgrade_libs():
@@ -166,10 +191,16 @@ def update_python_packages():
         .format(site_dir=site_dir))
 
 
-def setup():
-    """Setup the remote server.
+def deploy(with_setting_up=False):
+    """Deploy the site to the remote server.
 
-    You should only have to call this task once, but re-running it should cause no problems.
+    If you deploy for the first time, you should request setting up by passing `True` as the `with_setting_up` argument.
+    You should only have to do this once, but setting up again should cause no problems.
+
+    Params:
+    -------
+    with_setting_up: bool
+        Set up the server bvefore deploying the site.
     """
 
     # test everything
@@ -178,50 +209,55 @@ def setup():
     # push Git content to the remote repository
     local('git push')
 
-    # upgrade/update apt
-    upgrade_libs()
+    # migrate database
+    migrate_database()
 
-    # necessary to install many Python libraries
-    sudo('apt-get install -y build-essential')
-    sudo('apt-get install -y git')
-    sudo('apt-get install -y python3')
-    sudo('apt-get install -y python3-pip')
-    sudo('apt-get install -y python3-all-dev')
+    if with_setting_up:
+        # upgrade/update apt
+        upgrade_libs()
 
-    # enable virtual environments
-    sudo('pip3 install virtualenv')
+        # necessary to install many Python libraries
+        sudo('apt-get install -y build-essential')
+        sudo('apt-get install -y git')
+        sudo('apt-get install -y python3')
+        sudo('apt-get install -y python3-pip')
+        sudo('apt-get install -y python3-all-dev')
 
-    # MySQL
-    sudo('apt-get install -y mysql-client')
-    sudo('apt-get install -y libmysqlclient-dev')
+        # enable virtual environments
+        sudo('pip3 install virtualenv')
 
-    # Java
-    sudo('apt-get install -y default-jre')
+        # MySQL
+        sudo('apt-get install -y mysql-client')
+        sudo('apt-get install -y libmysqlclient-dev')
 
-    # supervisor
-    sudo('apt-get install -y supervisor')
+        # Java
+        sudo('apt-get install -y default-jre')
 
-    # nginx
-    sudo('apt-get install -y nginx')
+        # supervisor
+        sudo('apt-get install -y supervisor')
 
-    # clone the Git repository (if it doesn't exist yet)
-    run('if [[ ! -d {site_dir} ]]\n'
-        'then\n'
-        '    git clone {repository} {site_dir}\n'
-        'fi'.format(repository=repository, site_dir=site_dir))
+        # nginx
+        sudo('apt-get install -y nginx')
 
-    # update the Git repository
-    run('cd {site_dir}; git pull'.format(site_dir=site_dir))
+        # clone the Git repository (if it doesn't exist yet)
+        run('if [[ ! -d {site_dir} ]]\n'
+            'then\n'
+            '    git clone {repository} {site_dir}\n'
+            'fi'.format(repository=repository, site_dir=site_dir))
 
-    # create environment variable prefix file
-    run('cd {site_dir}; echo {prefix} > env_var_prefix'.format(prefix=prefix, site_dir=site_dir))
+        # update the Git repository
+        run('cd {site_dir}; git pull'.format(site_dir=site_dir))
 
-    # create a virtual environment (if it doesn't exist yet)
-    run('cd {site_dir}\n'
-        'if [[ ! -d venv ]]\n'
-        'then\n'
-        '    python3 -m virtualenv venv\n'
-        'fi'.format(site_dir=site_dir))
+        # create environment variable prefix file
+        run('cd {site_dir}; echo {prefix} > env_var_prefix'.format(prefix=prefix, site_dir=site_dir))
+
+        # create a virtual environment (if it doesn't exist yet)
+        run('cd {site_dir}\n'
+            'if [[ ! -d venv ]]\n'
+            'then\n'
+            '    python3 -m virtualenv venv\n'
+            'fi'.format(site_dir=site_dir))
+
     # install Python packages
     update_python_packages()
 
@@ -243,38 +279,8 @@ def setup():
     update_nginx_conf()
 
 
-def deploy():
-    """Deploy the app to the remote server.
-    """
-
-    # test everything
-    local('./run_tests.sh')
-
-    # push Git content to the remote repository
-    local('git push')
-
-    # update the Git repository
-    run('cd {site_dir}; git pull'.format(site_dir=site_dir))
-
-    # install Python packages
-    update_python_packages()
-
-    # update the environment variables file
-    # this must happen before Supervisor or Nginx are updated
-    update_environment_variables_file()
-
-    # update the log directory
-    # this must happen before Supervisor or Nginx are updated
-    update_log_dir()
-
-    # update static file bundles
-    update_webassets()
-
-    # update Supervisor
-    update_supervisor()
-
-    # update Nginx
-    update_nginx_conf()
+def setup():
+    deploy(with_setting_up=True)
 
 
 def reboot():
