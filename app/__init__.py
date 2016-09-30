@@ -1,5 +1,6 @@
 import os
 
+from bokeh.resources import CDN
 from flask import Flask
 from flask_assets import Environment
 from flask_bootstrap import Bootstrap
@@ -45,5 +46,9 @@ def create_app(config_name):
 
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
+
+    @app.context_processor
+    def bokeh_resources():
+        return dict(bokeh_resources=CDN)
 
     return app
