@@ -25,6 +25,7 @@ python3 -m venv venv
 
 and then install the required Python libraries,
 
+```
 source venv/bin/activate
 ```
 
@@ -32,20 +33,64 @@ Create a file `env_var_prefix` which contains a single line with the prefix to u
 
 Define the required environment variables, as set out in the section *Environment variables* below. (If you are using an IDE, you might define these in your running configuration.)
 
-You can then run the following commands for launching the (development) server or running the tests.
+If you are planning to use it, you also need to install [Flyway](https://flywaydb.org) on your machine. Otherwise you have to set the environment variable `<PREFIX>_DB_MIGRATION_TOOL` (with the prefix defined in `env_var_prefix`) to another tool, or `None`. See the Database section below.
 
-| Command | Purpose |
-| --- | --- |
-| `python manage.py runserver` | Launch the server |
-| `./run_tests.sh` | Run the tests |
+You can download its command-line tool from [https://flywaydb.org/getstarted/download](https://flywaydb.org/getstarted/download). As Java is on your machine already (at least if you've followed the instructions so far), you may download the version without JRE.
 
-You might have to make the script `./run_tests.sh` executable,
+Extract the downloaded file in a suitable location of your choice (`/path/to/Flyway`, say). Then you can define a command `flyway` by defining an alias in your Bash configuration.
 
 ```bash
-chmod u+x run_tests.sh
+alias flyway='/path/to/Flyway/flyway'
+```
+
+As this alias won't be used by Flask, you might also need to set an environment variable `<PREFIX>_DB_MIGRATION_COMMAND` (with the prefix defined in `env_var_prefix`) to the path to the Flyway script.
+
+```bash
+export <PREFIX>_DB_MIGRATION_FLYWAY_COMMAND='/path/to/Flyway/flyway'
 ```
 
 Finally, you should modify the `README.md` file as required, and add a `LICENSE.txt` file.
+
+#### Running tests and the server
+
+Once you have installed everything, run the following commands for launching the server or running the tests.
+
+| Command | Purpose |
+| --- | --- |
+| `flask run` | Launch the server |
+| `./run_tests.sh` | Run the tests |
+
+These commands should be executed in the root directory of the site.
+
+In order to run the server, two environment variables need to be set:
+
+| Environment variable | Description | Value |
+| FLASK_APP | Path to the Flask app file | `site_app` |
+| FLASK_CONFIG | Configuration to use (`development`, `testing` or `production`) | 
+
+So in order to launch the site with the development configuration you would execute
+
+```bash
+export FLASK_APP=site_app.py
+export FLASK_CONFIG=development
+flask run
+```
+
+Obviously it would be a bit tedious to have to type the export commands over and over again. You may avoid this by adding them to the activation script of the virtual environment, `venv/bin/activate`
+
+```bash
+export FLASK_APP=site_app.py
+export FLASK_CONFIG=development
+```
+
+and unsetting them in the script's deactivate function
+
+```bash
+if [ ! "$1" = "nondestructive" ] ; then
+    unset FLASK_APP
+    unset FLASK_CONFIG
+fi
+```
 
 ### On a remote server
 
@@ -134,7 +179,7 @@ Most of the environment variables must be defined for various configurations, wh
 | testing | `TEST_` |
 | production | no prefix |
 
-The script `run_tests.sh` uses the testing configuration. If you launch the server with the `manage.py` script, the development configuration is used. Code deployed to a remote server uses the production configuration.
+The script `run_tests.sh` uses the testing configuration. Code deployed to a remote server uses the production configuration. Otherwise the configuration specified by the `FLASK_APP_CONFIG` environment variable.
 
 For example, if the content of the file `env_var_prefix` is `MY_APP` an environment variable name for the development configuration could be `MY_APP_DEV_DATABASE_URI`.
 
@@ -154,7 +199,7 @@ The following variables are required for all modes:
 | `SECRET_KEY` | Key for password seeding | Yes | n/a | `s89ywnke56` |
 | `SSL_ENABLED` | Whether SSL should be disabled | No | 0 | 0 |
 
-The following variable have no infix (but the prefix!) and are required only if you run the commands for setting up a remote server or deploying the site.
+The following variable have no infix (but the prefix!) and are required only if you run the commands for setting up a remote server or deploying the site, or if you perform a database migration.
 
 | Environment variable | Description | Required | Default | Example |
 | --- | --- |
@@ -167,6 +212,15 @@ The following variable have no infix (but the prefix!) and are required only if 
 | DEPLOY_WEB_USER | User for running the Tornado server | No | `www-data` | `www-data` |
 | DEPLOY_WEB_USER_GROUP | Unix group of the user running the Tornado server | No | `www-data` | `www-data` |
 | DEPLOY_BOKEH_SERVER_PORT | No | 5100 | 5100 |
+| DB_MIGRATION_TOOL | Tool to use for database migration | No | `Flyway` | `Flask-Migrate` |
+| DB_MIGRATION_SQL_DIR | Directory containing the migration SQL scripts | no | `db_migrations` | `db_migrations` |
+| DB_MIGRATION_FLYWAY_COMMAND | Command for running flyway | No | `flyway` | `/path/to/flyway` |
+
+You can disable logging as well:
+
+| Environment variable | Description | Required | Default | Example |
+| --- | --- |
+| WITH_LOGGING | Whether to log errors (1) or not (0) | No | 1 | 1 |
 
 ## Adding your own environment variables
 
@@ -323,9 +377,13 @@ webassets.env.RegisterError: Another bundle is already registered as ...
 
 This framework circumvents the issue by removing all existing bundles before attempting to load bundles in the app's `__init__.py` file.
 
-## Database access
+## Database
 
-The framework includes Flask-SQLAlchemy and makes an SQLAlchemy instance available as a variable `db` in the `app` package. You can, for example, use this to create a Pandas dataframe from an SQL query:
+The framework includes Flask-SQLAlchemy and makes an SQLAlchemy instance available as a variable `db` in the `app` package. 
+
+### Database access
+
+You can, for example, access the database by creating a Pandas dataframe from an SQL query:
 
 ```python
 # Pandas doesn't ship with this framework, but you can install it with
@@ -340,7 +398,54 @@ df = pd.read_sql(sql, db.engine)
 
 The framework installs mysqlclient. If you aren't using MySQL, you may uninstall this library, and you have to install whatever library you require.
 
-Note that the framework doesn't create any ORM models or offers any database migration support.
+Note that the framework doesn't create any ORM models.
+
+### Database migrations
+
+You must set the `DB_MIGRATION_TOOL` environment variable to choose which tool (if any) to use for performing a database migration when deploying your code. The options are:
+
+| Database migration option | Variable value |
+| Use Flask-Migrate | Flask-Migrate |
+| Use Flyway | Flyway |
+| Don't migrate the database | None |
+
+#### Using Flask-Migrate
+
+See [https://flask-migrate.readthedocs.io/en/latest/](https://flask-migrate.readthedocs.io/en/latest/) for an introduction to using Flask-Migrate. When you call it with its Flask command,
+
+```bash
+flask db ...
+```
+
+it will access the same database used when you run `flask run` (i.e. the one for the configuration set by the environment variable `FLASK_CONFIG`). Use the environment variable `DB_MIGRATION_SQL_DIR` for setting the folder containing your migration scripts.
+
+You can choose the directory for the migration script with the `-d` flag. For example, if you want to use the directory provided by this framework, you would initialise the migration by means ofd running
+
+```bash
+flask db init -d db_migrations
+```
+
+Similarly, you would create the migration scripts by running
+
+```bash
+flask db migrate -m 'some descriptive message' -d db_migrations
+```
+
+And finally, you would push the migration changes to the database by running
+
+```bash
+flask db upgrade -d db_migrations
+``` 
+
+#### Using Flyway
+
+For convenience, there is a Flask command for running Flyway:
+
+```bash
+flask flyway
+```
+
+This will migrate the same database used when you run `flask run` (i.e. the one for the configuration set by the environment variable `FLASK_CONFIG`). Use the environment variables `DB_MIGRATION_FLYWAY_COMMAND` and `DB_MIGRATION_SQL_DIR` for setting the Flyway command (if just using `flyway` doesn't work) and the folder containing your migration scripts.
 
 ## Bokeh
 
