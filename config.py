@@ -110,7 +110,7 @@ class Config:
             ssl_status = SSLStatus.ENABLED
 
         # database migration
-        migration_tool = os.environ.get(prefix + 'DB_MIGRATION_TOOL', 'Flyway')
+        migration_tool = os.environ.get(prefix + 'DB_MIGRATION_TOOL', 'None')
         flyway_command = os.environ.get(prefix + 'DB_MIGRATION_FLYWAY_COMMAND', 'flyway')
         migration_sql_dir = os.environ.get(prefix + 'DB_MIGRATION_SQL_DIR', 'db_migrations')
 
@@ -161,7 +161,6 @@ class Config:
                     key = parts[0].strip()
                     value = parts[1].strip()
                     os.environ[key] = value
-
 
     @staticmethod
     def _environment_variable(raw_name, prefix, config_name, required=True, default=None):
