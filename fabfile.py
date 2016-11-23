@@ -136,6 +136,7 @@ def update_log_dir():
     """
 
     settings = Config.settings('production')
+    log_file = os.path.abspath(settings['logging_file_base_path'])
     log_dir = os.path.abspath(os.path.join(settings['logging_file_base_path'], os.path.pardir))
     sudo('if [[ ! -d {log_dir} ]]\n'
          'then\n'
@@ -148,6 +149,19 @@ def update_log_dir():
          '    sleep 5\n'
          '    exit 1\n'
          'fi'.format(log_dir=log_dir,
+                     web_user=web_user,
+                     web_user_group=web_user_group))
+    sudo('if [[ ! -e {log_file} ]]\n'
+         'then\n'
+         '    touch {log_file}\n'
+         '    chmod 700 {log_file}\n'
+         '    chown {web_user}:{web_user_group} {log_file}\n'
+         'elif [ `ls -l {log_file} | awk \'{{print $3}}\'` != "{web_user}" ]\n'
+         'then\n'
+         '    echo "The log file {log_file} isn\'t owned by the web user {{web_user}}."\n'
+         '    sleep 5\n'
+         '    exit 1\n'
+         'fi'.format(log_file=log_file,
                      web_user=web_user,
                      web_user_group=web_user_group))
 
@@ -191,92 +205,97 @@ def update_python_packages():
         .format(site_dir=site_dir))
 
 
-def deploy(with_setting_up=False):
-    """Deploy the site to the remote server.
+if __name__ == '__main__':
+    def deploy(with_setting_up=False):
+        """Deploy the site to the remote server.
 
-    If you deploy for the first time, you should request setting up by passing `True` as the `with_setting_up` argument.
-    You should only have to do this once, but setting up again should cause no problems.
+        If you deploy for the first time, you should request setting up by passing `True` as the `with_setting_up` argument.
+        You should only have to do this once, but setting up again should cause no problems.
 
-    Params:
-    -------
-    with_setting_up: bool
-        Set up the server bvefore deploying the site.
-    """
+        Params:
+        -------
+        with_setting_up: bool
+            Set up the server bvefore deploying the site.
+        """
 
-    # test everything
-    local('./run_tests.sh')
+        # test everything
+        local('./run_tests.sh')
 
-    # push Git content to the remote repository
-    local('git push')
+        # push Git content to the remote repository
+        local('git push')
 
-    # migrate database
-    migrate_database()
+        # migrate database
+        migrate_database()
 
-    if with_setting_up:
-        # upgrade/update apt
-        upgrade_libs()
+        if with_setting_up:
+            # upgrade/update apt
+            upgrade_libs()
 
-        # necessary to install many Python libraries
-        sudo('apt-get install -y build-essential')
-        sudo('apt-get install -y git')
-        sudo('apt-get install -y python3')
-        sudo('apt-get install -y python3-pip')
-        sudo('apt-get install -y python3-all-dev')
+            # necessary to install many Python libraries
+            sudo('apt-get install -y build-essential')
+            sudo('apt-get install -y git')
+            sudo('apt-get install -y python3')
+            sudo('apt-get install -y python3-pip')
+            sudo('apt-get install -y python3-all-dev')
 
-        # enable virtual environments
-        sudo('pip3 install virtualenv')
+            # enable virtual environments
+            sudo('pip3 install virtualenv')
 
-        # MySQL
-        sudo('apt-get install -y mysql-client')
-        sudo('apt-get install -y libmysqlclient-dev')
+            # MySQL
+            sudo('apt-get install -y mysql-client')
+            sudo('apt-get install -y libmysqlclient-dev')
 
-        # Java
-        sudo('apt-get install -y default-jre')
+            # Java
+            sudo('apt-get install -y default-jre')
 
-        # supervisor
-        sudo('apt-get install -y supervisor')
+            # supervisor
+            sudo('apt-get install -y supervisor')
 
-        # nginx
-        sudo('apt-get install -y nginx')
+            # nginx
+            sudo('apt-get install -y nginx')
 
-        # clone the Git repository (if it doesn't exist yet)
-        run('if [[ ! -d {site_dir} ]]\n'
-            'then\n'
-            '    git clone {repository} {site_dir}\n'
-            'fi'.format(repository=repository, site_dir=site_dir))
+            # clone the Git repository (if it doesn't exist yet)
+            run('if [[ ! -d {site_dir} ]]\n'
+                'then\n'
+                '    git clone {repository} {site_dir}\n'
+                'fi'.format(repository=repository, site_dir=site_dir))
 
-        # update the Git repository
-        run('cd {site_dir}; git pull'.format(site_dir=site_dir))
+            # update the Git repository
+            run('cd {site_dir}; git pull'.format(site_dir=site_dir))
 
-        # create environment variable prefix file
-        run('cd {site_dir}; echo {prefix} > env_var_prefix'.format(prefix=prefix, site_dir=site_dir))
+            # create environment variable prefix file
+            run('cd {site_dir}; echo {prefix} > env_var_prefix'.format(prefix=prefix, site_dir=site_dir))
 
-        # create a virtual environment (if it doesn't exist yet)
-        run('cd {site_dir}\n'
-            'if [[ ! -d venv ]]\n'
-            'then\n'
-            '    python3 -m virtualenv venv\n'
-            'fi'.format(site_dir=site_dir))
+            # create a virtual environment (if it doesn't exist yet)
+            run('cd {site_dir}\n'
+                'if [[ ! -d venv ]]\n'
+                'then\n'
+                '    python3 -m virtualenv venv\n'
+                'fi'.format(site_dir=site_dir))
 
-    # install Python packages
-    update_python_packages()
+        # install Python packages
+        update_python_packages()
 
-    # setup the environment variables file
-    # this must happen before Supervisor or Nginx are updated
-    update_environment_variables_file()
+        # setup the environment variables file
+        # this must happen before Supervisor or Nginx are updated
+        update_environment_variables_file()
 
-    # setup the log directory
-    # this must happen before Supervisor or Nginx are updated
-    update_log_dir()
+        # setup the log directory
+        # this must happen before Supervisor or Nginx are updated
+        update_log_dir()
 
-    # create static file bundles
-    update_webassets()
+        # create static file bundles
+        update_webassets()
 
-    # setup Supervisor
-    update_supervisor()
+        # setup Supervisor
+        update_supervisor()
 
-    # setup Nginx
-    update_nginx_conf()
+        # setup Nginx
+        update_nginx_conf()
+
+        # yes, all should be working now - but it seems that existing Supervisor jobs might not have been killed
+        # hence we rather do a full reboot..
+        reboot()
 
 
 def setup():
